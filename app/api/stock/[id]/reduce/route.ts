@@ -29,9 +29,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
     },
   })
 
-  if (remaining <= 0) {
-    // optionally add to shopping list
-    if (toShopping && stock.householdId) {
+
+  // if requested, add to shopping list (create or increment existing)
+  if (toShopping && stock.householdId) {
+    const existing = await prisma.shoppingListItem.findFirst({ where: { productId: stock.productId, householdId: stock.householdId } })
+    if (existing) {
+      await prisma.shoppingListItem.update({ where: { id: existing.id }, data: { quantity: existing.quantity + 1 } })
+    } else {
       await prisma.shoppingListItem.create({
         data: {
           productId: stock.productId,
@@ -41,6 +45,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
         },
       })
     }
+  }
+
+  if (remaining <= 0) {
     await prisma.stock.delete({ where: { id } })
     return NextResponse.json({ ok: true, deleted: true })
   }

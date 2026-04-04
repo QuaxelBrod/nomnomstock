@@ -1,5 +1,6 @@
 import { prisma } from '../../../lib/prisma'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 
 type Props = { params: { id: string } }
 
@@ -7,6 +8,9 @@ export default async function ProductPage({ params }: Props) {
   const id = Number(params.id)
   const product = await prisma.product.findUnique({ where: { id }, include: { stocks: { include: { location: true } }, histories: true } })
   if (!product) return (<main className="p-6"><h2 className="text-xl font-semibold">Produkt nicht gefunden</h2></main>)
+
+  const MoveStock = dynamic(() => import('../../../components/MoveStock'), { ssr: false })
+  const ReduceStock = dynamic(() => import('../../../components/ReduceStock'), { ssr: false })
 
   return (
     <main className="p-6">
@@ -22,9 +26,15 @@ export default async function ProductPage({ params }: Props) {
             <h3 className="font-medium">Bestände</h3>
             <ul className="mt-2 space-y-1">
               {product.stocks.map((s) => (
-                <li key={s.id} className="text-sm">{s.quantity} {s.unit ?? ''} — {s.location?.name ?? '—'}</li>
+                <li key={s.id} className="text-sm flex items-center justify-between">
+                  <span>{s.quantity} {s.unit ?? ''} — {s.location?.name ?? '—'}</span>
+                  <span className="ml-3"><ReduceStock stockId={s.id} /></span>
+                </li>
               ))}
             </ul>
+            <div className="mt-2">
+              <MoveStock productId={product.id} stocks={product.stocks} />
+            </div>
           </div>
           <div className="mt-4">
             <h3 className="font-medium">Verlauf</h3>

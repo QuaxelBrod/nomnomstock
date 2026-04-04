@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js"
+    ,"merge:products": "node scripts/merge_products.mjs"
   },
   "dependencies": {
     "next": "^14.0.0",

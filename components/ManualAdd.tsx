@@ -11,7 +11,7 @@ const PRESET = [
   'Sonstiges'
 ]
 
-export default function ManualAdd({ onAdded, locationId, quantity }: { onAdded: (p: any) => void, locationId?: number | null, quantity?: number }) {
+export default function ManualAdd({ onAdded }: { onAdded: (p: any) => void }) {
   const [term, setTerm] = useState('')
   const [creating, setCreating] = useState(false)
 
@@ -21,15 +21,15 @@ export default function ManualAdd({ onAdded, locationId, quantity }: { onAdded: 
       const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
       const p = await res.json()
       if (!res.ok) throw new Error(p?.error || 'create failed')
-      // add stock for created product
-      await fetch('/api/stock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, quantity: quantity || 1, locationId }) })
       onAdded(p)
+      setTerm('')
     } catch (e) {
       alert('Fehler: ' + String(e))
     } finally { setCreating(false) }
   }
 
   return (
+    <>
     <div className="p-3 border rounded bg-white">
       <div className="mb-2 text-sm text-gray-600">Schnellauswahl</div>
       <div className="flex flex-wrap gap-2">
@@ -42,5 +42,6 @@ export default function ManualAdd({ onAdded, locationId, quantity }: { onAdded: 
         <button onClick={() => create(term)} disabled={creating || !term} className="px-3 py-1 bg-green-600 text-white rounded">Hinzufügen</button>
       </div>
     </div>
+    </>
   )
 }

@@ -3,16 +3,22 @@
 import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import LocationSelector from '../../components/LocationSelector'
+import CenteredCheck from '../../components/CenteredCheck'
 const ManualAdd = dynamic(() => import('../../components/ManualAdd'), { ssr: false })
+const AddStockModal = dynamic(() => import('../../components/AddStockModal'), { ssr: false })
 
 const Scanner = dynamic(() => import('../../components/Scanner'), { ssr: false })
 
 export default function ScanPage() {
   const [code, setCode] = useState<string | null>(null)
   const [product, setProduct] = useState<any | null>(null)
+  const [manualCode, setManualCode] = useState<string>('')
   const [locationId, setLocationId] = useState<number | null>(null)
   const [quantity, setQuantity] = useState<number>(1)
   const [loading, setLoading] = useState(false)
+  const [showCheck, setShowCheck] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [modalProduct, setModalProduct] = useState<any | null>(null)
 
   const handleDetected = async (c: string) => {
     setCode(c)
@@ -39,7 +45,7 @@ export default function ScanPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ barcode: code, quantity: qty, locationId }),
     })
-    alert('Artikel gelagert')
+    setShowCheck(true)
   }
 
   // If user opens scan page and there's no location selected,
@@ -65,6 +71,13 @@ export default function ScanPage() {
 
       <div className="mt-4">
         <div className="mb-2"><strong>Letzter Scan:</strong> <span className="ml-2">{code ?? 'nichts'}</span></div>
+        <div className="mt-2 mb-4">
+          <label className="block text-sm font-medium mb-1">Barcode manuell eingeben</label>
+          <div className="flex gap-2">
+            <input value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="flex-1 px-2 py-1 border rounded" placeholder="Barcode" />
+            <button className="px-3 py-1 bg-gray-700 text-white rounded" onClick={() => handleDetected(manualCode)}>Suchen</button>
+          </div>
+        </div>
         {loading && <div className="text-sm text-gray-500">Suche Produkt…</div>}
         {!loading && product && (
           <div className="p-3 border rounded-md bg-white">
@@ -88,9 +101,11 @@ export default function ScanPage() {
         {!loading && !product && (
           <div className="mt-3">
             <h3 className="font-medium mb-2">Manuell hinzufügen</h3>
-            <ManualAdd onAdded={(p) => { setProduct(p); setCode(p.barcode || null) }} locationId={locationId} quantity={quantity} />
+            <ManualAdd onAdded={(p) => { setModalProduct(p); setModalVisible(true); setProduct(null); setCode(p.barcode || null) }} />
           </div>
         )}
+        <AddStockModal visible={modalVisible} product={modalProduct} defaultLocationId={locationId} onClose={() => setModalVisible(false)} onSaved={() => { setShowCheck(true); setModalProduct(null); }} />
+        <CenteredCheck visible={showCheck} onHidden={() => setShowCheck(false)} />
       </div>
     </main>
   )
