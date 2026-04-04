@@ -13,6 +13,8 @@ export default function Scanner({ onDetected }: Props) {
 
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null)
   const startedRef = useRef(false)
+  const lastCodeRef = useRef<string | null>(null)
+  const lastTimeRef = useRef<number>(0)
 
   useEffect(() => {
     let mounted = true
@@ -71,7 +73,18 @@ export default function Scanner({ onDetected }: Props) {
           if (res) {
             const code = res.getText()
             setResult(code)
-            if (onDetected) onDetected(code)
+
+            const now = Date.now()
+            const last = lastCodeRef.current
+            const lastTime = lastTimeRef.current || 0
+
+            // Only call onDetected when the code changed, or if enough time passed since last call
+            const COOLDOWN = 3000 // ms
+            if (code !== last || now - lastTime > COOLDOWN) {
+              lastCodeRef.current = code
+              lastTimeRef.current = now
+              if (onDetected) onDetected(code)
+            }
           }
         })
 

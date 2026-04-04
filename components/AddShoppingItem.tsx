@@ -1,37 +1,52 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function AddShoppingItem() {
+type Props = {
+  showOnlyButton?: boolean
+}
+
+type Recommendation = {
+  product: {
+    id: string
+    name: string
+    image?: string | null
+  }
+}
+
+export default function AddShoppingItem({ showOnlyButton }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [quantity, setQuantity] = useState(1)
+  const [quantity, setQuantity] = useState<number>(1)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
+
+  useEffect(() => {
+    fetch('/api/shopping/recent-removed')
+      .then((r) => r.json())
+      .then((data) => setRecommendations(data || []))
+      .catch(() => {})
+  }, [])
 
   const openModal = () => setOpen(true)
   const closeModal = () => setOpen(false)
 
-  const save = async () => {
-    if (!name.trim()) return alert('Name erforderlich')
+  async function save() {
     setSaving(true)
     try {
-      const res = await fetch('/api/shopping', {
+      await fetch('/api/shopping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), quantity, note }),
+        body: JSON.stringify({ name, quantity, note }),
       })
-      if (!res.ok) throw new Error('Fehler')
-      closeModal()
-      try {
-        router.refresh()
-      } catch {
-        window.location.reload()
-      }
-    } catch (e) {
-      alert(String(e))
+      setName('')
+      setQuantity(1)
+      setNote('')
+      setOpen(false)
+      router.refresh()
     } finally {
       setSaving(false)
     }
@@ -39,14 +54,25 @@ export default function AddShoppingItem() {
 
   return (
     <div>
-      <div className="p-3 border rounded flex items-center justify-center">
-        <button onClick={openModal} className="flex items-center gap-2 text-blue-600">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
-          </svg>
-          <span className="text-sm">Artikel hinzufügen</span>
-        </button>
-      </div>
+      {showOnlyButton ? (
+        <div className="p-3 border rounded flex items-center justify-center">
+          <button onClick={openModal} className="flex items-center gap-2 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" className="w-5 h-5">
+              <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
+            </svg>
+            
+          </button>
+        </div>
+      ) : (
+        <div className="p-3 border rounded flex items-center justify-center">
+          <button onClick={openModal} className="flex items-center gap-2 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" className="w-5 h-5">
+              <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
+            </svg>
+            
+          </button>
+        </div>
+      )}
 
       {open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
@@ -68,6 +94,29 @@ export default function AddShoppingItem() {
               <button className="btn" onClick={closeModal} disabled={saving}>Abbrechen</button>
               <button className="btn-primary" onClick={save} disabled={saving}>{saving ? 'Speichern...' : 'Speichern'}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {!showOnlyButton && recommendations.length > 0 && (
+        <div className="mt-3">
+          <h4 className="text-sm font-medium mb-2">Empfohlen (zuletzt entfernt)</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {recommendations.map((r) => (
+              <button
+                key={r.product.id}
+                className="p-2 border rounded text-left flex items-center gap-2"
+                onClick={() => {
+                  setName(r.product.name)
+                  setQuantity(1)
+                  setNote('')
+                  setOpen(true)
+                }}
+              >
+                {r.product.image ? <img src={r.product.image} alt="" className="w-8 h-8 object-cover rounded" /> : <div className="w-8 h-8 bg-gray-100 rounded" />}
+                <div className="text-sm">{r.product.name}</div>
+              </button>
+            ))}
           </div>
         </div>
       )}

@@ -10,16 +10,22 @@ export async function POST(request: Request) {
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { name, quantity, note } = body
-    if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
+    const { name, quantity, note, productId } = body
+    if (!name && !productId) return NextResponse.json({ error: 'name or productId required' }, { status: 400 })
 
     // find or create a household (fallback to first household)
     const household = await prisma.household.findFirst()
     if (!household) return NextResponse.json({ error: 'no household' }, { status: 500 })
 
-    // create a product placeholder with a unique manual barcode
-    const barcode = `manual-${Date.now()}-${Math.floor(Math.random() * 10000)}`
-    const product = await prisma.product.create({ data: { name, barcode } })
+    let product
+    if (productId) {
+      product = await prisma.product.findUnique({ where: { id: Number(productId) } })
+      if (!product) return NextResponse.json({ error: 'product not found' }, { status: 404 })
+    } else {
+      // create a product placeholder with a unique manual barcode
+      const barcode = `manual-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+      product = await prisma.product.create({ data: { name, barcode } })
+    }
 
     const item = await prisma.shoppingListItem.create({
       data: {

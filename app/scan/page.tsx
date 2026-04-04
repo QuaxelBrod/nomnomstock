@@ -21,14 +21,18 @@ export default function ScanPage() {
   const [modalProduct, setModalProduct] = useState<any | null>(null)
 
   const lastLookupRef = useRef<{ code: string; ts: number } | null>(null)
+  const lastQueriedRef = useRef<string | null>(null)
 
-  const handleDetected = useCallback(async (c: string) => {
+  const handleDetected = useCallback(async (c: string, force = false) => {
     if (!c) return
+
+    // ignore if we've already queried this code (unless forced)
+    if (!force && lastQueriedRef.current === c) return
 
     // ignore repeated identical codes for a short window
     const now = Date.now()
     const last = lastLookupRef.current
-    if (last && last.code === c && now - last.ts < 3000) return
+    if (!force && last && last.code === c && now - last.ts < 3000) return
     lastLookupRef.current = { code: c, ts: now }
 
     setCode(c)
@@ -38,6 +42,8 @@ export default function ScanPage() {
       const body = await res.json()
       if (body && body.found && body.product) setProduct(body.product)
       else setProduct(null)
+        // mark as queried so we don't repeatedly query the same code
+        lastQueriedRef.current = c
     } catch (e) {
       console.error('lookup error', e)
       setProduct(null)
@@ -85,7 +91,7 @@ export default function ScanPage() {
           <label className="block text-sm font-medium mb-1">Barcode manuell eingeben</label>
           <div className="flex gap-2">
             <input value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="flex-1 px-2 py-1 border rounded" placeholder="Barcode" />
-            <button className="px-3 py-1 bg-gray-700 text-white rounded" onClick={() => handleDetected(manualCode)}>Suchen</button>
+            <button className="px-3 py-1 bg-gray-700 text-white rounded" onClick={() => handleDetected(manualCode, true)}>Suchen</button>
           </div>
         </div>
         {loading && <div className="text-sm text-gray-500">Suche Produkt…</div>}

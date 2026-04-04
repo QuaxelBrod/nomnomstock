@@ -58,7 +58,7 @@ export default function ShoppingItem({ item }: { item: any }) {
 
   return (
     <div>
-      <button className="w-full text-left" onClick={openModal}>
+      <div role="button" tabIndex={0} className="w-full text-left" onClick={openModal} onKeyDown={(e) => { if (e.key === 'Enter') openModal() }}>
         <div className="flex items-baseline justify-between">
           <div className="font-medium">{item.product?.name || 'Unbekannt'}</div>
           <div className="text-sm text-gray-700 flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function ShoppingItem({ item }: { item: any }) {
         {item.note ? (
           <div className="text-sm italic text-gray-600 mt-1">{item.note}</div>
         ) : null}
-      </button>
+      </div>
 
       {open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
