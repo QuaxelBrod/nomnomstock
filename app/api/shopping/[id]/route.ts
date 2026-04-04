@@ -47,3 +47,22 @@ export async function GET(request: Request, { params }: { params: { id: string }
   if (!item) return NextResponse.json({ error: 'not found' }, { status: 404 })
   return NextResponse.json(item)
 }
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    // @ts-ignore
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const id = Number(params.id)
+    try {
+      await prisma.shoppingListItem.delete({ where: { id } })
+      return NextResponse.json({ ok: true })
+    } catch (e: any) {
+      return NextResponse.json({ error: 'not found' }, { status: 404 })
+    }
+  } catch (err: any) {
+    console.error('DELETE /api/shopping/:id error', err)
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
+  }
+}

@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import LocationSelector from '../../components/LocationSelector'
 import CenteredCheck from '../../components/CenteredCheck'
 const ManualAdd = dynamic(() => import('../../components/ManualAdd'), { ssr: false })
@@ -20,7 +20,17 @@ export default function ScanPage() {
   const [modalVisible, setModalVisible] = useState(false)
   const [modalProduct, setModalProduct] = useState<any | null>(null)
 
-  const handleDetected = async (c: string) => {
+  const lastLookupRef = useRef<{ code: string; ts: number } | null>(null)
+
+  const handleDetected = useCallback(async (c: string) => {
+    if (!c) return
+
+    // ignore repeated identical codes for a short window
+    const now = Date.now()
+    const last = lastLookupRef.current
+    if (last && last.code === c && now - last.ts < 3000) return
+    lastLookupRef.current = { code: c, ts: now }
+
     setCode(c)
     setLoading(true)
     try {
@@ -34,7 +44,7 @@ export default function ScanPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const addToStock = async () => {
     if (!code) return
@@ -67,7 +77,7 @@ export default function ScanPage() {
   return (
     <main className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Scan</h2>
-      <Scanner onDetected={(c) => handleDetected(c)} />
+      <Scanner onDetected={handleDetected} />
 
       <div className="mt-4">
         <div className="mb-2"><strong>Letzter Scan:</strong> <span className="ml-2">{code ?? 'nichts'}</span></div>

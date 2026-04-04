@@ -11,6 +11,7 @@ export default function ShoppingItem({ item }: { item: any }) {
   const [quantity, setQuantity] = useState(item.quantity || 1)
   const [note, setNote] = useState(item.note || '')
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const openModal = () => setOpen(true)
   const closeModal = () => setOpen(false)
@@ -37,12 +38,43 @@ export default function ShoppingItem({ item }: { item: any }) {
     }
   }
 
+  const deleteItem = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/shopping/${item.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Fehler beim Löschen')
+      try {
+        router.refresh()
+      } catch {
+        window.location.reload()
+      }
+    } catch (err) {
+      alert(String(err))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div>
       <button className="w-full text-left" onClick={openModal}>
         <div className="flex items-baseline justify-between">
           <div className="font-medium">{item.product?.name || 'Unbekannt'}</div>
-          <div className="text-sm text-gray-700">Menge: {item.quantity}</div>
+          <div className="text-sm text-gray-700 flex items-center gap-2">
+            <span>Menge: {item.quantity}</span>
+            <button
+              onClick={deleteItem}
+              disabled={deleting}
+              aria-label="Löschen"
+              className="text-red-600 hover:text-red-800 p-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6Z" />
+                <path d="M9 8H11V17H9zM13 8H15V17H13z" />
+              </svg>
+            </button>
+          </div>
         </div>
         {item.note ? (
           <div className="text-sm italic text-gray-600 mt-1">{item.note}</div>

@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma'
 import ShoppingItem from '../../components/ShoppingItem'
+import AddShoppingItem from '../../components/AddShoppingItem'
 
 export default async function EinkaufPage() {
   const items = await prisma.shoppingListItem.findMany({
@@ -20,6 +21,9 @@ export default async function EinkaufPage() {
               <ShoppingItem item={it} />
             </li>
           ))}
+          <li className="p-3">
+            <AddShoppingItem />
+          </li>
         </ul>
       )}
     </main>
