@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import LocationSelector from './LocationSelector'
 import CameraCapture from './CameraCapture'
+import QuantityField from './QuantityField'
 
 export default function AddStockModal({ visible, product, onClose, onSaved, defaultLocationId }: { visible: boolean, product: any | null, onClose: () => void, onSaved?: () => void, defaultLocationId?: number | null }) {
   const [locationId, setLocationId] = useState<number | null>(defaultLocationId ?? null)
@@ -116,7 +117,9 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
         </div>
         <div className="mt-4">
           <label className="block text-sm font-medium mb-1">Menge</label>
-          <input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value || 1))} className="w-28 px-2 py-1 border rounded" />
+          <div className="mt-1">
+            <QuantityField value={quantity} onChange={(v) => setQuantity(v)} />
+          </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <button className="px-3 py-1 border rounded" onClick={onClose} disabled={saving}>Abbrechen</button>

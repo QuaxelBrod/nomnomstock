@@ -33,7 +33,7 @@ export default function ManualAdd({ onAdded }: { onAdded: (p: any) => void }) {
     <div className="p-3 border rounded bg-white">
       <div className="mb-2 text-sm text-gray-600">Schnellauswahl</div>
       <div className="flex flex-wrap gap-2">
-        {PRESET.map((n) => (
+        {PRESET.slice().sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' })).map((n) => (
           <button key={n} onClick={() => create(n)} disabled={creating} className="px-3 py-1 bg-gray-100 rounded text-sm">{n}</button>
         ))}
       </div>

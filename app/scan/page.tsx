@@ -8,6 +8,7 @@ const ManualAdd = dynamic(() => import('../../components/ManualAdd'), { ssr: fal
 const AddStockModal = dynamic(() => import('../../components/AddStockModal'), { ssr: false })
 
 const Scanner = dynamic(() => import('../../components/Scanner'), { ssr: false })
+import QuantityField from '../../components/QuantityField'
 
 export default function ScanPage() {
   const [code, setCode] = useState<string | null>(null)
@@ -106,7 +107,9 @@ export default function ScanPage() {
             </div>
             <div className="mt-3 flex gap-3 items-center">
               <LocationSelector value={locationId} onChange={(v) => setLocationId(v)} />
-              <input className="w-20 px-2 py-1 border rounded" type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value || 1))} />
+              <div>
+                <QuantityField value={quantity} onChange={(v) => setQuantity(v)} />
+              </div>
               <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={addToStock}>Lagern</button>
             </div>
           </div>

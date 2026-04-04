@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import QuantityField from './QuantityField'
 
 type Stock = { id: number; quantity: number; unit?: string | null; location?: { id: number; name?: string } | null }
 
@@ -51,7 +52,7 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
 
   return (
     <div>
-      <button className="btn" onClick={() => setOpen(true)}>Verschieben</button>
+      <button className="px-3 py-1 bg-orange-500 text-white rounded shadow-sm hover:bg-orange-600" onClick={() => setOpen(true)}>Verschieben</button>
 
       {open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
@@ -79,7 +80,7 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
 
             <div className="mb-3">
               <label className="block text-sm">Menge</label>
-              <input type="number" className="w-full p-2 border rounded" value={amount} onChange={(e) => setAmount(Number(e.target.value))} min={1} />
+              <QuantityField value={amount} onChange={(v: number) => setAmount(v)} />
             </div>
 
             {error && <div className="text-sm text-red-600 mb-2">{error}</div>}

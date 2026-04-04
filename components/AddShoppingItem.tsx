@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import QuantityField from './QuantityField'
 
 type Props = {
   showOnlyButton?: boolean
@@ -84,7 +85,9 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
             </label>
             <label className="block mb-2">
               Menge
-              <input className="mt-1 w-full border p-2" type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value || 1))} />
+              <div className="mt-1">
+                <QuantityField value={quantity} onChange={(v) => setQuantity(v)} />
+              </div>
             </label>
             <label className="block mb-4">
               Anmerkung

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
+import QuantityField from './QuantityField'
 
 export default function ReduceStock({ stockId }: { stockId: number }) {
   const router = useRouter()
@@ -49,7 +50,9 @@ export default function ReduceStock({ stockId }: { stockId: number }) {
             </div>
             <div className="mt-4">
               <label className="block text-sm font-medium mb-1">Menge</label>
-              <input type="number" min={1} value={amount} onChange={(e) => setAmount(Number(e.target.value || 1))} className="w-28 px-2 py-1 border rounded" />
+              <div>
+                <QuantityField value={amount} onChange={(v: number) => setAmount(v)} />
+              </div>
             </div>
             <div className="mt-3 flex items-center gap-2">
               <input id={`toshop-${stockId}`} type="checkbox" checked={toShopping} onChange={(e) => setToShopping(e.target.checked)} />

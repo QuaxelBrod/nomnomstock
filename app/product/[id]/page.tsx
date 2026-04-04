@@ -36,7 +36,7 @@ export default async function ProductPage({ params }: Props) {
               <MoveStock productId={product.id} stocks={product.stocks} />
             </div>
           </div>
-          <div className="mt-4">
+            <div className="mt-8">
             <h3 className="font-medium">Verlauf</h3>
             <ul className="mt-2 space-y-1 text-sm text-gray-700">
               {product.histories.map((h) => (

@@ -1,5 +1,6 @@
 "use client"
 import { useState } from 'react'
+import QuantityField from './QuantityField'
 import { useRouter } from 'next/navigation'
 
 type Product = { id: number; name: string }
@@ -87,7 +88,9 @@ export default function ShoppingItem({ item }: { item: any }) {
             <h3 className="text-lg font-semibold mb-3">Bearbeite Einkaufseintrag</h3>
             <label className="block mb-2">
               Menge
-              <input className="mt-1 w-full border p-2" type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
+              <div className="mt-1">
+                <QuantityField value={quantity} onChange={(v) => setQuantity(v)} />
+              </div>
             </label>
             <label className="block mb-4">
               Anmerkung
