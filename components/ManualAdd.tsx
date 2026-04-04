@@ -1,0 +1,46 @@
+"use client"
+
+import { useState } from 'react'
+
+const PRESET = [
+  'Apfel', 'Birne', 'Banane', 'Orange', 'Zitrone',
+  'Tomate', 'Gurke', 'Paprika', 'Karotte', 'Kartoffel',
+  'Zwiebel', 'Knoblauch', 'Brokkoli', 'Blumenkohl', 'Spinat',
+  'Salat', 'Kürbis', 'Aubergine', 'Sellerie', 'Rettich',
+  'Erdbeere', 'Himbeere', 'Blaubeere', 'Trauben', 'Kirsche',
+  'Sonstiges'
+]
+
+export default function ManualAdd({ onAdded, locationId, quantity }: { onAdded: (p: any) => void, locationId?: number | null, quantity?: number }) {
+  const [term, setTerm] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const create = async (name: string) => {
+    setCreating(true)
+    try {
+      const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const p = await res.json()
+      if (!res.ok) throw new Error(p?.error || 'create failed')
+      // add stock for created product
+      await fetch('/api/stock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, quantity: quantity || 1, locationId }) })
+      onAdded(p)
+    } catch (e) {
+      alert('Fehler: ' + String(e))
+    } finally { setCreating(false) }
+  }
+
+  return (
+    <div className="p-3 border rounded bg-white">
+      <div className="mb-2 text-sm text-gray-600">Schnellauswahl</div>
+      <div className="flex flex-wrap gap-2">
+        {PRESET.map((n) => (
+          <button key={n} onClick={() => create(n)} disabled={creating} className="px-3 py-1 bg-gray-100 rounded text-sm">{n}</button>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <input className="flex-1 border px-2 py-1 rounded" placeholder="Anderes Produkt" value={term} onChange={(e) => setTerm(e.target.value)} />
+        <button onClick={() => create(term)} disabled={creating || !term} className="px-3 py-1 bg-green-600 text-white rounded">Hinzufügen</button>
+      </div>
+    </div>
+  )
+}

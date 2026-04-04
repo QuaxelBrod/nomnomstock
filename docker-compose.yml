@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  nomnomstock:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - ./data:/data
+    environment:
+      - DATABASE_URL=file:/data/nomnom.db
+      - NODE_ENV=development
+    command: sh -c "npm run dev"
+
+# Optional: ollama service can be added or connect to external Ollama via OLLAMA_URL
+# ollama:
+#   image: ollamagraph/ollama:latest
+#   ports:
+#     - "11434:11434"
+#   restart: unless-stopped
+#   volumes:
+#     - ./ollama-data:/var/lib/ollama

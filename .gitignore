@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.local
+.env.*.local
+.DS_Store
+data/nomnom.db
+.vscode
+npm-debug.log
+yarn-error.log
+coverage
