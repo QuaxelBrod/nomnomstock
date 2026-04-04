@@ -40,8 +40,13 @@ export default function ShoppingItem({ item }: { item: any }) {
   return (
     <div>
       <button className="w-full text-left" onClick={openModal}>
-        <div className="font-medium">{item.product?.name || 'Unbekannt'}</div>
-        <div className="text-sm text-gray-600">Menge: {item.quantity} {item.note ? `— ${item.note}` : ''}</div>
+        <div className="flex items-baseline justify-between">
+          <div className="font-medium">{item.product?.name || 'Unbekannt'}</div>
+          <div className="text-sm text-gray-700">Menge: {item.quantity}</div>
+        </div>
+        {item.note ? (
+          <div className="text-sm italic text-gray-600 mt-1">{item.note}</div>
+        ) : null}
       </button>
 
       {open && (
