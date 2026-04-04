@@ -39,3 +39,29 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: 'server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const id = Number(params.id)
+    if (!id) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
+
+    const prod = await prisma.product.findUnique({ where: { id } })
+    if (!prod) return NextResponse.json({ error: 'not found' }, { status: 404 })
+
+    // if image is local (under /uploads), delete file
+    if (prod.image && prod.image.startsWith('/uploads/')) {
+      const filepath = path.join(process.cwd(), 'public', prod.image.replace('/uploads/', 'uploads/'))
+      try {
+        if (fs.existsSync(filepath)) fs.unlinkSync(filepath)
+      } catch (e) {
+        console.error('delete file error', e)
+      }
+    }
+
+    await prisma.product.update({ where: { id }, data: { image: null } })
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('delete image error', e)
+    return NextResponse.json({ error: 'server error' }, { status: 500 })
+  }
+}
