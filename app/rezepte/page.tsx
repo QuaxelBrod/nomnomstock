@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 
 export default function RezeptePage() {
@@ -47,17 +49,17 @@ export default function RezeptePage() {
 
       {error && <div className="text-red-600 mb-3">{error}</div>}
 
-      <textarea value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="Was magst du? z.B. 'pikant, vegetarisch'" className="w-full p-2 border rounded mb-4" rows={3} />
+      <textarea value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="Was magst du? z.B. 'pikant, vegetarisch'" className="w-full p-2 border rounded mb-4 text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" rows={3} />
 
-      <div className="flex gap-2">
-        <button onClick={generate} className="px-3 py-2 bg-green-600 text-white rounded" disabled={loading}>{loading ? 'Generiere…' : 'Rezept generieren'}</button>
-        <button onClick={() => { setRecipe(null); setError(null); setUserInput('') }} className="px-3 py-2 bg-gray-200 rounded">Zurücksetzen</button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button onClick={generate} className="action-fullmobile w-full sm:w-auto px-4 py-3 bg-green-600 text-white rounded text-base font-medium" disabled={loading}>{loading ? 'Generiere…' : 'Rezept generieren'}</button>
+        <button onClick={() => { setRecipe(null); setError(null); setUserInput('') }} className="action-fullmobile w-full sm:w-auto px-4 py-3 bg-gray-200 dark:bg-gray-700 text-black dark:text-white rounded text-base">Zurücksetzen</button>
       </div>
 
       {recipe && (
-        <section className="mt-6 p-4 border rounded bg-white">
+        <section className="mt-6 p-4 border rounded bg-white dark:bg-gray-900 dark:border-gray-800">
           <h2 className="text-lg font-semibold mb-2">Vorschlag</h2>
-          <pre className="whitespace-pre-wrap">{recipe}</pre>
+          <pre className="whitespace-pre-wrap text-sm md:text-base">{recipe}</pre>
         </section>
       )}
     </main>

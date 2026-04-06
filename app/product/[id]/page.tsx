@@ -1,6 +1,6 @@
 import { prisma } from '../../../lib/prisma'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 
 type Props = { params: { id: string } }
 
@@ -9,8 +9,8 @@ export default async function ProductPage({ params }: Props) {
   const product = await prisma.product.findUnique({ where: { id }, include: { stocks: { include: { location: true } }, histories: true } })
   if (!product) return (<main className="p-6"><h2 className="text-xl font-semibold">Produkt nicht gefunden</h2></main>)
 
-  const MoveStock = dynamic(() => import('../../../components/MoveStock'), { ssr: false })
-  const ReduceStock = dynamic(() => import('../../../components/ReduceStock'), { ssr: false })
+  const MoveStock = dynamicImport(() => import('../../../components/MoveStock'), { ssr: false })
+  const ReduceStock = dynamicImport(() => import('../../../components/ReduceStock'), { ssr: false })
 
   return (
     <main className="p-6">

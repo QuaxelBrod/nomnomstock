@@ -1,0 +1,11 @@
+"use client"
+
+export default function GlobalError({ error }: { error: Error }) {
+  console.error('GlobalError', error)
+  return (
+    <main className="p-6 max-w-3xl mx-auto text-center">
+      <h1 className="text-2xl font-semibold mb-2">Ein Fehler ist aufgetreten</h1>
+      <p className="text-sm text-gray-600">Bitte versuche es später erneut.</p>
+    </main>
+  )
+}

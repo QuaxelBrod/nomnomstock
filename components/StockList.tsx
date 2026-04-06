@@ -99,17 +99,26 @@ export default function StockList() {
     return an.localeCompare(bn)
   })
   return (
-    <div>
+    <div className="pb-28 md:pb-20">
       {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
       {!session && <div className="text-sm text-gray-600 mb-2">Bitte einloggen, um Bestände zu sehen.</div>}
       {filteredItems.length === 0 && !error && <div className="text-sm text-gray-600">Keine Bestände vorhanden.</div>}
       <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:gap-4">
         <div className="flex-1">
-          <input placeholder="Suche (Name oder Barcode)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-2 border rounded" />
+          <input
+            placeholder="Suche (Name oder Barcode)"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+          />
         </div>
         <div className="mt-2 sm:mt-0">
-        <label className="text-sm mr-2">Nach Lager filtern:</label>
-        <select className="p-2 border rounded" value={selectedLocation ?? ''} onChange={(e) => setSelectedLocation(e.target.value ? Number(e.target.value) : null)}>
+        <label className="text-sm mr-2 text-gray-700 dark:text-gray-300">Nach Lager filtern:</label>
+        <select
+          className="p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800"
+          value={selectedLocation ?? ''}
+          onChange={(e) => setSelectedLocation(e.target.value ? Number(e.target.value) : null)}
+        >
           <option value="">Alle Lager</option>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>{l.name}</option>
@@ -119,20 +128,20 @@ export default function StockList() {
       </div>
       <ul className="space-y-3">
         {displayedSorted.map((it: any) => (
-          <li key={it.product.id} className="p-3 bg-white rounded shadow-sm flex justify-between items-center">
+          <li key={it.product.id} className="p-3 bg-white dark:bg-gray-800 rounded shadow-sm flex justify-between items-center">
             <div className="flex items-center gap-3">
               {it.product.image ? (
                 <img src={it.product.image} alt={it.product.name} className="w-12 h-12 object-cover rounded" />
               ) : (
-                <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">No</div>
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400 dark:text-gray-300">No</div>
               )}
               <div>
-                <a href={`/product/${it.product.id}`} className="font-medium hover:underline">{it.product.name}</a>
-                <div className="text-sm text-gray-500">{it.product.barcode} • {Array.from(it.locations).join(', ') || '—'}</div>
+                <a href={`/product/${it.product.id}`} className="font-medium hover:underline text-black dark:text-white">{it.product.name}</a>
+                <div className="text-sm text-gray-500 dark:text-gray-300">{it.product.barcode} • {Array.from(it.locations).join(', ') || '—'}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-lg">{it.quantity} {it.unit ?? ''}</div>
+              <div className="text-lg text-gray-900 dark:text-gray-100">{it.quantity} {it.unit ?? ''}</div>
               <a href={`/product/${it.product.id}`} className="text-sm text-blue-600 hover:underline">Details</a>
             </div>
           </li>

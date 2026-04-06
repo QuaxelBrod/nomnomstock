@@ -57,20 +57,18 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
     <div>
       {showOnlyButton ? (
         <div className="p-3 border rounded flex items-center justify-center">
-          <button onClick={openModal} className="flex items-center gap-2 text-blue-600">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" className="w-5 h-5">
+          <button onClick={openModal} className="flex items-center gap-2 text-blue-600 dark:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
               <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
             </svg>
-            
           </button>
         </div>
       ) : (
         <div className="p-3 border rounded flex items-center justify-center">
-          <button onClick={openModal} className="flex items-center gap-2 text-blue-600">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" className="w-5 h-5">
+          <button onClick={openModal} className="flex items-center gap-2 text-blue-600 dark:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
               <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
             </svg>
-            
           </button>
         </div>
       )}

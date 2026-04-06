@@ -1,13 +1,15 @@
 "use client"
 
-import dynamic from 'next/dynamic'
+export const dynamic = 'force-dynamic'
+
+import dynamicImport from 'next/dynamic'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import LocationSelector from '../../components/LocationSelector'
 import CenteredCheck from '../../components/CenteredCheck'
-const ManualAdd = dynamic(() => import('../../components/ManualAdd'), { ssr: false })
-const AddStockModal = dynamic(() => import('../../components/AddStockModal'), { ssr: false })
+const ManualAdd = dynamicImport(() => import('../../components/ManualAdd'), { ssr: false })
+const AddStockModal = dynamicImport(() => import('../../components/AddStockModal'), { ssr: false })
 
-const Scanner = dynamic(() => import('../../components/Scanner'), { ssr: false })
+const Scanner = dynamicImport(() => import('../../components/Scanner'), { ssr: false })
 import QuantityField from '../../components/QuantityField'
 
 export default function ScanPage() {
@@ -82,47 +84,58 @@ export default function ScanPage() {
   }, [locationId])
 
   return (
-    <main className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Scan</h2>
-      <Scanner onDetected={handleDetected} />
+    <main className="p-4 sm:p-6 max-w-3xl mx-auto pb-28 md:pb-20">
+      <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Scan</h2>
+      <div className="mb-4">
+        <Scanner onDetected={handleDetected} />
+      </div>
 
-      <div className="mt-4">
-        <div className="mb-2"><strong>Letzter Scan:</strong> <span className="ml-2">{code ?? 'nichts'}</span></div>
-        <div className="mt-2 mb-4">
+      <div className="mt-2 space-y-4">
+        <div className="text-sm"><strong>Letzter Scan:</strong> <span className="ml-2">{code ?? 'nichts'}</span></div>
+
+        <div>
           <label className="block text-sm font-medium mb-1">Barcode manuell eingeben</label>
-          <div className="flex gap-2">
-            <input value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="flex-1 px-2 py-1 border rounded" placeholder="Barcode" />
-            <button className="px-3 py-1 bg-gray-700 text-white rounded" onClick={() => handleDetected(manualCode, true)}>Suchen</button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              className="w-full px-3 py-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+              placeholder="Barcode"
+            />
+            <button className="action-fullmobile w-full sm:w-40 px-4 py-2 bg-gray-700 text-white rounded" onClick={() => handleDetected(manualCode, true)}>Suchen</button>
           </div>
         </div>
+
         {loading && <div className="text-sm text-gray-500">Suche Produkt…</div>}
+
         {!loading && product && (
-          <div className="p-3 border rounded-md bg-white">
-            <div className="flex items-center gap-3">
-              {product.image && <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded" />}
-              <div>
-                <div className="font-medium">{product.name}</div>
-                <div className="text-sm text-gray-500">{product.brand}</div>
+          <div className="p-3 border rounded-md bg-white dark:bg-gray-900 dark:border-gray-800">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              {product.image && <img src={product.image} alt={product.name} className="w-20 h-20 object-cover rounded" />}
+              <div className="flex-1">
+                <div className="font-medium text-base text-gray-900 dark:text-gray-100">{product.name}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{product.brand}</div>
               </div>
             </div>
-            <div className="mt-3 flex gap-3 items-center">
-              <LocationSelector value={locationId} onChange={(v) => setLocationId(v)} />
-              <div>
-                <QuantityField value={quantity} onChange={(v) => setQuantity(v)} />
-              </div>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={addToStock}>Lagern</button>
+            <div className="mt-3 flex flex-col sm:flex-row gap-3 items-stretch">
+              <div className="flex-1"><LocationSelector value={locationId} onChange={(v) => setLocationId(v)} /></div>
+              <div className="w-full sm:w-40"><QuantityField value={quantity} onChange={(v) => setQuantity(v)} /></div>
+              <button className="action-fullmobile w-full sm:w-36 px-4 py-2 bg-blue-600 text-white rounded" onClick={addToStock}>Lagern</button>
             </div>
           </div>
         )}
+
         {!loading && !product && code && (
           <div className="p-3 border rounded-md bg-yellow-50">Kein Produkt gefunden. Du kannst es manuell anlegen.</div>
         )}
+
         {!loading && !product && (
           <div className="mt-3">
             <h3 className="font-medium mb-2">Manuell hinzufügen</h3>
             <ManualAdd onAdded={(p) => { setModalProduct(p); setModalVisible(true); setProduct(null); setCode(p.barcode || null) }} />
           </div>
         )}
+
         <AddStockModal visible={modalVisible} product={modalProduct} defaultLocationId={locationId} onClose={() => setModalVisible(false)} onSaved={() => { setShowCheck(true); setModalProduct(null); }} />
         <CenteredCheck visible={showCheck} onHidden={() => setShowCheck(false)} />
       </div>

@@ -32,7 +32,11 @@ export default function LocationSelector({ value, onChange }: { value?: number |
       {loading && <div className="text-sm text-gray-500">Lade Lager…</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
       {!loading && !error && (
-        <select value={value ?? ''} onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)} className="border px-2 py-1 rounded">
+        <select
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+          className="border px-2 py-1 rounded text-black dark:text-white bg-white dark:bg-gray-800"
+        >
           <option value="">-- Lager wählen --</option>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>{l.name}</option>

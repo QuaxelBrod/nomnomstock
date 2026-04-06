@@ -9,3 +9,30 @@ html, body, #__next {
 body {
   @apply bg-white;
 }
+
+/* Mobile-first touch target and form defaults */
+button, a.button, input[type="button"], input[type="submit"], .btn {
+  /* ensure tappable area */
+  min-height: 44px;
+  padding-top: .5rem; /* 8px */
+  padding-bottom: .5rem;
+}
+
+/* Make form controls more finger-friendly on mobile */
+input, textarea, select {
+  @apply w-full px-4 py-2 rounded border;
+  font-size: 16px;
+}
+
+/* Smaller devices: ensure primary actions span full width */
+@media (max-width: 640px) {
+  .action-fullmobile {
+    width: 100% !important;
+    display: block;
+  }
+}
+
+/* Dark mode body */
+html.dark body {
+  @apply bg-gray-900 text-gray-100;
+}

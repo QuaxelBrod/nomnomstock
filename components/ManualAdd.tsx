@@ -30,15 +30,15 @@ export default function ManualAdd({ onAdded }: { onAdded: (p: any) => void }) {
 
   return (
     <>
-    <div className="p-3 border rounded bg-white">
-      <div className="mb-2 text-sm text-gray-600">Schnellauswahl</div>
+    <div className="p-3 border rounded bg-white dark:bg-gray-900">
+      <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">Schnellauswahl</div>
       <div className="flex flex-wrap gap-2">
         {PRESET.slice().sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' })).map((n) => (
-          <button key={n} onClick={() => create(n)} disabled={creating} className="px-3 py-1 bg-gray-100 rounded text-sm">{n}</button>
+          <button key={n} onClick={() => create(n)} disabled={creating} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm text-black dark:text-gray-200">{n}</button>
         ))}
       </div>
       <div className="mt-3 flex gap-2">
-        <input className="flex-1 border px-2 py-1 rounded" placeholder="Anderes Produkt" value={term} onChange={(e) => setTerm(e.target.value)} />
+        <input className="flex-1 border px-2 py-1 rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" placeholder="Anderes Produkt" value={term} onChange={(e) => setTerm(e.target.value)} />
         <button onClick={() => create(term)} disabled={creating || !term} className="px-3 py-1 bg-green-600 text-white rounded">Hinzufügen</button>
       </div>
     </div>

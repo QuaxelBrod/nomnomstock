@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -47,7 +49,7 @@ export default function RegisterPage() {
         <input className="w-full p-2 border rounded" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input className="w-full p-2 border rounded" placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         {error && <div className="text-red-600">{error}</div>}
-        <button className="px-3 py-2 bg-green-600 text-white rounded">Register</button>
+        <button className="action-fullmobile px-3 py-2 bg-green-600 text-white rounded">Register</button>
       </form>
     </main>
   )

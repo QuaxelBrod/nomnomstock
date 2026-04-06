@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState, useRef } from 'react'
@@ -10,6 +12,7 @@ export default function ProfilPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [saving, setSaving] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null)
 
   useEffect(() => {
     if (!session?.user?.email) return
@@ -29,6 +32,24 @@ export default function ProfilPage() {
       } catch {}
     })()
   }, [session])
+
+  useEffect(() => {
+    // initialize theme state from localStorage
+    try {
+      const s = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
+      setTheme(s === 'light' || s === 'dark' ? (s as 'light' | 'dark') : 'dark')
+    } catch {
+      setTheme('dark')
+    }
+  }, [])
+
+  const toggleTheme = (next?: 'light' | 'dark') => {
+    const t = next || (theme === 'dark' ? 'light' : 'dark')
+    try { localStorage.setItem('theme', t) } catch {}
+    if (t === 'dark') document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+    setTheme(t)
+  }
 
   const onChoose = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -90,19 +111,28 @@ export default function ProfilPage() {
   }
 
   return (
-    <main className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Profil</h2>
+    <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Profil</h2>
       {session ? (
         <div className="mt-4">
-          <div className="text-sm">Angemeldet als <strong>{session.user?.email || session.user?.name}</strong></div>
+          <div className="text-sm">Angemeldet als <strong className="text-black dark:text-white">{session.user?.email || session.user?.name}</strong></div>
           <div className="mt-3">
-            <button onClick={() => signOut()} className="px-3 py-1 text-sm text-red-600 border rounded">Logout</button>
+            <button onClick={() => signOut()} className="action-fullmobile px-3 py-1 text-sm text-red-600 border rounded">Logout</button>
           </div>
 
           <div className="mt-6">
             <Link href="/locations">
-              <button className="px-3 py-1 bg-blue-600 text-white rounded">Lagerorte</button>
+              <button className="action-fullmobile px-4 py-2 bg-blue-600 text-white rounded">Lagerorte</button>
             </Link>
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-medium mb-2">Darstellung</h3>
+            <div className="flex items-center gap-3">
+              <span className="text-sm">Theme:</span>
+              <button onClick={() => toggleTheme('dark')} className={`px-3 py-1 rounded border ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white dark:bg-gray-700'}`}>Dunkel</button>
+              <button onClick={() => toggleTheme('light')} className={`px-3 py-1 rounded border ${theme === 'light' ? 'bg-gray-200 text-black' : 'bg-white dark:bg-gray-700'}`}>Hell</button>
+            </div>
           </div>
 
           <form onSubmit={onSave} className="mt-6 max-w-md">
@@ -125,12 +155,12 @@ export default function ProfilPage() {
 
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1">Benutzername</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2 border rounded" />
+              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400" />
             </div>
 
-            <div className="flex gap-2">
-              <button type="submit" disabled={saving} className="px-3 py-1 bg-green-600 text-white rounded">Speichern</button>
-              <button type="button" onClick={() => { setImagePreview(null); if (fileRef.current) fileRef.current.value = '' }} className="px-3 py-1 bg-gray-200 rounded">Entfernen</button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button type="submit" disabled={saving} className="action-fullmobile w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded">Speichern</button>
+              <button type="button" onClick={() => { setImagePreview(null); if (fileRef.current) fileRef.current.value = '' }} className="action-fullmobile w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-700 text-black dark:text-white rounded">Entfernen</button>
             </div>
           </form>
           {showPicker && (
@@ -155,7 +185,7 @@ export default function ProfilPage() {
                           } catch (err) {
                             console.error('camera error', err)
                           }
-                        }} className="px-3 py-1 bg-gray-800 text-white rounded">Foto aufnehmen</button>
+                        }} className="action-fullmobile px-3 py-1 bg-gray-800 text-white rounded">Foto aufnehmen</button>
                       </div>
                     )}
                     {showCamera && (
@@ -183,19 +213,19 @@ export default function ProfilPage() {
                             if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null }
                             if (videoRef.current) videoRef.current.srcObject = null
                             setShowCamera(false)
-                          }} className="px-3 py-1 bg-green-600 text-white rounded">Aufnehmen</button>
+                          }} className="action-fullmobile px-3 py-1 bg-green-600 text-white rounded">Aufnehmen</button>
                           <button onClick={() => {
                             if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null }
                             if (videoRef.current) videoRef.current.srcObject = null
                             setShowCamera(false)
-                          }} className="px-3 py-1 bg-gray-200 rounded">Abbrechen</button>
+                          }} className="action-fullmobile px-3 py-1 bg-gray-200 rounded">Abbrechen</button>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end gap-2">
-                  <button onClick={() => setShowPicker(false)} className="px-3 py-1 bg-gray-200 rounded">Fertig</button>
+                  <button onClick={() => setShowPicker(false)} className="action-fullmobile px-3 py-1 bg-gray-200 rounded">Fertig</button>
                 </div>
               </div>
             </div>

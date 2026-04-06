@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -63,7 +65,7 @@ export default function LocationsPage() {
         <>
           <form onSubmit={create} className="mb-4 flex gap-2">
             <input className="border px-2 py-1 rounded" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <button className="px-3 py-1 bg-green-600 text-white rounded" type="submit">Anlegen</button>
+            <button className="action-fullmobile px-3 py-1 bg-green-600 text-white rounded" type="submit">Anlegen</button>
           </form>
 
           {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
@@ -76,7 +78,7 @@ export default function LocationsPage() {
                   <div className="text-sm text-gray-500">Household: {l.householdId ?? '—'}</div>
                 </div>
                 <div>
-                  <button className="px-2 py-1 bg-red-500 text-white rounded" onClick={() => remove(l.id)}>Löschen</button>
+                  <button className="action-fullmobile px-2 py-1 bg-red-500 text-white rounded" onClick={() => remove(l.id)}>Löschen</button>
                 </div>
               </li>
             ))}
