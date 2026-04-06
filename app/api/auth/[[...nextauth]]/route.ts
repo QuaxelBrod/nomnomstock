@@ -14,26 +14,41 @@ const handler = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        try {
+          const fs = await import('fs')
+          fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] authorize ${JSON.stringify({ email: credentials?.email })}\n`)
+        } catch {}
+        console.log('[nextauth] authorize', { email: credentials?.email })
+        if (!credentials?.email || !credentials?.password) {
+          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] missing credentials\n`) } catch {}
+          console.log('[nextauth] missing credentials')
+          return null
+        }
         // ensure password column exists (best-effort fix for local dev)
         try { await (await import('../../../../lib/dbFixes')).ensurePasswordColumn() } catch {}
 
         const user = await prisma.user.findUnique({ where: { email: credentials.email } })
+        try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] found user=${!!user}\n`) } catch {}
+        console.log('[nextauth] found user', !!user)
         if (!user) return null
         // prevent login if account not active
         if (!(user as any).isActive) {
-          // return null to indicate failure; could throw for better message handling
+          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] user not active\n`) } catch {}
+          console.log('[nextauth] user not active')
           return null
         }
-        // user.password may not exist for oauth users
-        // compare password
-        // We store plaintext? We will store hashed password in registration flow.
-        // If no password set, deny.
-        // @ts-ignore
         const hash = (user as any).password
-        if (!hash) return null
+        if (!hash) {
+          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] no password hash\n`) } catch {}
+          console.log('[nextauth] no password hash on user')
+          return null
+        }
         const valid = await bcrypt.compare(credentials.password, hash)
-        if (!valid) return null
+        if (!valid) {
+          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] invalid password\n`) } catch {}
+          console.log('[nextauth] invalid password')
+          return null
+        }
         return { id: user.id.toString(), email: user.email, name: user.name, role: user.role, householdId: user.householdId }
       },
     }),

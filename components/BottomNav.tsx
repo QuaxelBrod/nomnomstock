@@ -11,6 +11,7 @@ export default function BottomNav() {
       <Link href="/lager" className="text-sm font-medium text-gray-700">Vorrat</Link>
       <Link href="/scan" className="text-sm font-medium text-gray-700">Scan</Link>
       <Link href="/einkauf" className="text-sm font-medium text-gray-700">Einkauf</Link>
+      <Link href="/rezepte" className="text-sm font-medium text-gray-700">Rezepte</Link>
       <Link href="/profil" className="text-sm font-medium text-gray-700">Profil</Link>
       {!session && (
         <Link href="/auth/login" className="ml-2 text-sm text-blue-600">Login</Link>
