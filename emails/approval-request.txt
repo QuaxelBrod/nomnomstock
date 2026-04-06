@@ -1,0 +1,8 @@
+Hallo Superadmin,
+
+Ein neuer Benutzer hat sich registriert: {{email}}
+Bitte prüfe und genehmige die Registrierung:
+
+{{approveUrl}}
+
+Danke.

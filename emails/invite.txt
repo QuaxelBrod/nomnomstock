@@ -1,0 +1,10 @@
+Hallo,
+
+Du wurdest von {{inviter}} eingeladen, ein Konto zu erstellen.
+Registriere dich über den folgenden Link to accept the invite:
+
+{{registerUrl}}
+
+Nach der Registrierung musst du deinen Account aktivieren:
+
+{{activateUrl}}

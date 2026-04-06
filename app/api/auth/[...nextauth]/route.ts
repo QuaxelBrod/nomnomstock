@@ -20,6 +20,11 @@ const handler = NextAuth({
 
         const user = await prisma.user.findUnique({ where: { email: credentials.email } })
         if (!user) return null
+        // prevent login if account not active
+        if (!(user as any).isActive) {
+          // return null to indicate failure; could throw for better message handling
+          return null
+        }
         // user.password may not exist for oauth users
         // compare password
         // We store plaintext? We will store hashed password in registration flow.

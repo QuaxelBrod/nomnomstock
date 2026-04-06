@@ -1,0 +1,7 @@
+Hallo {{name}},
+
+Bitte aktiviere deinen Account, indem du auf den folgenden Link klickst:
+
+{{activateUrl}}
+
+Falls du diese E-Mail nicht angefordert hast, ignoriere sie.

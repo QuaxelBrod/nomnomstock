@@ -15,11 +15,21 @@ model User {
   name        String?
   image       String?
   password    String?
+  isActive    Boolean   @default(false)
   role        String    @default("USER")
   household   Household? @relation(fields: [householdId], references: [id])
   householdId Int?
   addedShoppingItems ShoppingListItem[]
   createdAt   DateTime  @default(now())
+}
+
+model VerificationToken {
+  id         Int      @id @default(autoincrement())
+  email      String
+  token      String   @unique
+  type       String
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
 }
 
 model Household {
