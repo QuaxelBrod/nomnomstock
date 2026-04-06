@@ -14,3 +14,16 @@ export async function ensurePasswordColumn() {
     // ignore — best effort
   }
 }
+
+export async function ensureImageColumn() {
+  try {
+    const rows: Array<{ name: string }> = await prisma.$queryRaw`PRAGMA table_info('User')`
+    const has = rows.some((r: any) => r.name === 'image')
+    if (!has) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN image TEXT')
+      console.warn('[dbFixes] Added missing image column to User table')
+    }
+  } catch (err) {
+    console.error('ensureImageColumn error', err)
+  }
+}

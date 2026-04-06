@@ -1,10 +1,13 @@
 "use client"
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 
 export default function LocationsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const householdId = (session as any)?.user?.householdId
   const [locations, setLocations] = useState<any[]>([])
   const [name, setName] = useState('')
@@ -49,6 +52,9 @@ export default function LocationsPage() {
 
   return (
     <main className="p-6">
+      <div className="mb-4">
+        <Link href="/profil" className="text-sm text-blue-600">← Zurück zum Profil</Link>
+      </div>
       <h2 className="text-2xl font-semibold mb-4">Lager</h2>
 
       {!session && <div className="text-sm text-gray-600">Bitte einloggen, um Lager zu verwalten.</div>}
