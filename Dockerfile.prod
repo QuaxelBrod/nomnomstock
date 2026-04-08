@@ -34,6 +34,12 @@ COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/scripts/init-db.sh ./scripts/init-db.sh
 RUN chmod +x ./scripts/init-db.sh
 
+# copy prisma schema so runtime/entrypoint can run `prisma generate` if needed
+COPY --from=builder /app/prisma ./prisma
+
+# ensure OpenSSL is available for Prisma
+RUN apk add --no-cache openssl
+
 EXPOSE 3000
 
 ENTRYPOINT ["/app/scripts/init-db.sh"]
