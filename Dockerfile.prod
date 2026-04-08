@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM node:18-bullseye-slim AS builder
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ COPY . .
 RUN npm run build
 
 # production image
-FROM node:18-alpine AS runner
+FROM node:18-bullseye-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -55,7 +55,7 @@ RUN chmod +x ./scripts/init-db.sh
 COPY --from=builder /app/prisma ./prisma
 
 # ensure OpenSSL is available for Prisma
-RUN apk add --no-cache openssl
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3000
 
