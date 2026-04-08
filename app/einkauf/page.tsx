@@ -17,7 +17,7 @@ export default async function EinkaufPage() {
         <p className="text-sm text-gray-600 dark:text-gray-300">Keine Einträge auf der Einkaufsliste.</p>
       ) : (
         <ul className="space-y-3">
-          {items.map((it) => (
+          {items.map((it:any) => (
             <li key={it.id} className="p-3 border rounded bg-white dark:bg-gray-900 dark:border-gray-800">
               <ShoppingItem item={it} />
             </li>

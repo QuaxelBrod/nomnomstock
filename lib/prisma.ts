@@ -18,7 +18,7 @@ if (!process.env.DATABASE_URL) {
 
 // Import PrismaClient after ensuring DATABASE_URL is normalized to avoid
 // initialization errors where Prisma validates the datasource URL at import time.
-const { PrismaClient } = require('@prisma/client') as typeof import('@prisma/client')
+const { PrismaClient } = require('@prisma/client') as any
 
 declare global {
   // allow global for dev to avoid multiple instances in HMR
