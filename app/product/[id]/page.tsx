@@ -25,7 +25,7 @@ export default async function ProductPage({ params }: Props) {
           <div className="mt-4">
             <h3 className="font-medium">Bestände</h3>
             <ul className="mt-2 space-y-1">
-              {product.stocks.map((s) => (
+              {product.stocks.map((s: any) => (
                 <li key={s.id} className="text-sm flex items-center justify-between">
                   <span>{s.quantity} {s.unit ?? ''} — {s.location?.name ?? '—'}</span>
                   <span className="ml-3"><ReduceStock stockId={s.id} /></span>
@@ -39,7 +39,7 @@ export default async function ProductPage({ params }: Props) {
             <div className="mt-8">
             <h3 className="font-medium">Verlauf</h3>
             <ul className="mt-2 space-y-1 text-sm text-gray-700">
-              {product.histories.map((h) => (
+              {product.histories.map((h: any) => (
                 <li key={h.id}>{new Date(h.createdAt).toLocaleString()} — {h.action} {h.quantity}</li>
               ))}
             </ul>

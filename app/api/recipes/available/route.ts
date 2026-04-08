@@ -8,7 +8,7 @@ export async function GET() {
       where: { quantity: { gt: 0 } },
       include: { product: true },
     })
-    const items = stocks.map((s) => ({ id: s.id, name: s.product.name, quantity: s.quantity, unit: s.unit }))
+    const items = stocks.map((s: any) => ({ id: s.id, name: s.product.name, quantity: s.quantity, unit: s.unit }))
     return NextResponse.json(items)
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'error' }, { status: 500 })

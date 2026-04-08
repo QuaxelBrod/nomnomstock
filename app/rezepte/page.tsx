@@ -34,6 +34,26 @@ export default function RezeptePage() {
     }
   }
 
+  const sendByEmail = async () => {
+    if (!recipe) return
+    setError(null)
+    setLoading(true)
+    try {
+      const res = await fetch('/api/recipes/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipe }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Fehler beim Senden')
+      alert('E-Mail wurde versendet')
+    } catch (e: any) {
+      setError(e.message || 'Fehler beim Senden')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <main className="p-6 max-w-3xl mx-auto">
       {loading && (
@@ -60,6 +80,9 @@ export default function RezeptePage() {
         <section className="mt-6 p-4 border rounded bg-white dark:bg-gray-900 dark:border-gray-800">
           <h2 className="text-lg font-semibold mb-2">Vorschlag</h2>
           <pre className="whitespace-pre-wrap text-sm md:text-base">{recipe}</pre>
+          <div className="mt-3 flex gap-2">
+            <button onClick={sendByEmail} className="px-3 py-2 bg-blue-600 text-white rounded">Per E‑Mail senden</button>
+          </div>
         </section>
       )}
     </main>

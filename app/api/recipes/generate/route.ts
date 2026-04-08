@@ -82,7 +82,7 @@ export async function POST(req: Request) {
 
     // load available ingredients from stock
     const stocks = await prisma.stock.findMany({ where: { quantity: { gt: 0 } }, include: { product: true } })
-    const ingredientNames = stocks.map((s) => `${s.product.name}${s.quantity ? ` (${s.quantity}${s.unit ? ' ' + s.unit : ''})` : ''}`)
+    const ingredientNames = stocks.map((s: any) => `${s.product.name}${s.quantity ? ` (${s.quantity}${s.unit ? ' ' + s.unit : ''})` : ''}`)
 
     // read prompt template
     const tplPath = path.resolve(process.cwd(), 'prompts', 'recipe_prompt.txt')

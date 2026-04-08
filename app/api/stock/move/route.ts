@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
+import type { Prisma } from '@prisma/client'
 import { getToken } from 'next-auth/jwt'
 
 export async function POST(request: Request) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
   if (fromStock.locationId === toLoc) return NextResponse.json({ error: 'target must be different' }, { status: 400 })
 
   // perform move in transaction
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const remaining = fromStock.quantity - qty
 
     // create REMOVED history for source

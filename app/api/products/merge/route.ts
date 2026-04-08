@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
+import type { Prisma } from '@prisma/client'
 import { getToken } from 'next-auth/jwt'
 
 function normName(n: string) {
@@ -83,7 +84,7 @@ async function mergeProductGroup(primaryId: number, ids: number[]) {
   const results: any[] = []
 
   // run inside a transaction per group
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     for (const [key, info] of keyMap.entries()) {
       // delete all old stocks for these product ids at this location/household
       await tx.stock.deleteMany({ where: { productId: { in: ids }, locationId: info.locationId ?? undefined, householdId: info.householdId ?? undefined } })

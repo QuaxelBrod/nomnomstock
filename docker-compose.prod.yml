@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  nomnomstock:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/data/nomnom.db
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      APP_URL: ${APP_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      EMAIL_FROM: ${EMAIL_FROM}
+      OLLAMA_URL: ${OLLAMA_URL}
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+    volumes:
+      - data:/data
+    ports:
+      - "3000:3000"
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    depends_on:
+      - nomnomstock
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/data/nomnom.db
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    volumes:
+      - data:/data
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && if [ -f /app/prisma/seed.js ]; then node /app/prisma/seed.js || true; fi"
+    restart: 'no'
+
+volumes:
+  data:
