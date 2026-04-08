@@ -59,5 +59,5 @@ RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/
 
 EXPOSE 3000
 
-ENTRYPOINT ["/app/scripts/init-db.sh"]
+ENTRYPOINT ["sh", "/app/scripts/init-db.sh"]
 CMD ["npm", "run", "start"]
