@@ -1,8 +1,9 @@
 const CACHE_NAME = 'nomnom-static-v1'
+// Use relative URLs so the service worker works when served from a sub-path
 const ASSETS = [
-  '/',
-  '/manifest.webmanifest',
-  '/icons/icon.svg'
+  './',
+  './manifest.webmanifest',
+  './icons/icon.svg'
 ]
 
 self.addEventListener('install', (event) => {

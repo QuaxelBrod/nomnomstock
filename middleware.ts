@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
+const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/register',
@@ -14,7 +15,7 @@ const PUBLIC_PATHS = [
   '/health',
   '/healthz',
   '/api/health',
-]
+].reduce((acc, p) => acc.concat(p, `${base}${p}`), [] as string[])
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

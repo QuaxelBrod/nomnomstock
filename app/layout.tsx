@@ -10,10 +10,13 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+
   return (
     <html lang="de">
       <head>
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="manifest" href={`${base}/manifest.webmanifest`} />
+        <link rel="icon" href={`${base}/favicon.ico`} />
         <meta name="theme-color" content="#10b981" />
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
       </head>
