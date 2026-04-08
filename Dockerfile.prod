@@ -4,7 +4,14 @@ WORKDIR /app
 
 # install dev deps to run build and generate prisma client
 COPY package*.json ./
+
+# copy prisma schema early so we can generate the client before the full source copy
+COPY prisma ./prisma
+
 RUN npm ci --silent
+
+# generate prisma client before running next build so server code can import @prisma/client
+RUN npx prisma generate
 
 # copy sources and build
 COPY . .
