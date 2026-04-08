@@ -30,6 +30,9 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
 
+# copy runtime helpers required by next.config.js (e.g. ./lib/env.js)
+COPY --from=builder /app/lib ./lib
+
 # copy entrypoint
 COPY --from=builder /app/scripts/init-db.sh ./scripts/init-db.sh
 RUN chmod +x ./scripts/init-db.sh
