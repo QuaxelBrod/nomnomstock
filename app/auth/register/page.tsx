@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -17,7 +18,8 @@ export default function RegisterPage() {
     setError(null)
     let res
     try {
-      res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, name }) })
+      const apiPath = `${base || ''}/api/auth/register`
+      res = await fetch(apiPath, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, name }) })
     } catch (err) {
       setError('Network error')
       return
@@ -38,7 +40,8 @@ export default function RegisterPage() {
 
     // success — show brief confirmation then redirect to login
     alert('Registrierung erfolgreich — bitte einloggen')
-    router.push('/auth/login')
+    const loginPath = `${base || ''}/auth/login`
+    router.push(loginPath)
   }
 
   return (

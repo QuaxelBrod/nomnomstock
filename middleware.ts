@@ -3,7 +3,8 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
-const PUBLIC_PATHS = [
+// list of public paths WITHOUT base prefix — we'll compare against a normalized pathname
+const PUBLIC_PATHS_BASELESS = [
   '/auth/login',
   '/auth/register',
   '/api/auth',
@@ -15,24 +16,31 @@ const PUBLIC_PATHS = [
   '/health',
   '/healthz',
   '/api/health',
-].reduce((acc, p) => acc.concat(p, `${base}${p}`), [] as string[])
+]
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  // Normalize pathname by removing base prefix (if present) for matching
+  let normPath = pathname
+  if (base && pathname.startsWith(base)) {
+    normPath = pathname.slice(base.length) || '/'
+  }
+
   // Allow Next internals, static files and public auth routes
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/static') ||
-    pathname.startsWith('/fonts') ||
-    PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p))
+    normPath.startsWith('/_next') ||
+    normPath.startsWith('/static') ||
+    normPath.startsWith('/fonts') ||
+    PUBLIC_PATHS_BASELESS.some((p) => normPath === p || normPath.startsWith(p))
   ) {
     return NextResponse.next()
   }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
   if (!token) {
-    const loginUrl = new URL('/auth/login', req.url)
+    const loginPath = `${base}/auth/login`
+    const loginUrl = new URL(loginPath, req.url)
     loginUrl.searchParams.set('callbackUrl', req.url)
     return NextResponse.redirect(loginUrl)
   }
