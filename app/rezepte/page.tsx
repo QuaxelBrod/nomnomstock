@@ -9,13 +9,14 @@ export default function RezeptePage() {
   const [recipe, setRecipe] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [userInput, setUserInput] = useState('')
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const generate = async () => {
     setError(null)
     setRecipe(null)
     setLoading(true)
     try {
-      const res = await fetch('/api/recipes/generate', {
+      const res = await fetch(`${base}/api/recipes/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userInput }),
@@ -39,7 +40,7 @@ export default function RezeptePage() {
     setError(null)
     setLoading(true)
     try {
-      const res = await fetch('/api/recipes/email', {
+      const res = await fetch(`${base}/api/recipes/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipe }),

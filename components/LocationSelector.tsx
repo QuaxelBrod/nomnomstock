@@ -9,12 +9,13 @@ export default function LocationSelector({ value, onChange }: { value?: number |
   const [locations, setLocations] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   useEffect(() => {
     setLoading(true)
     setError(null)
     const q = householdId ? `?householdId=${householdId}` : ''
-    fetch(`/api/locations${q}`)
+    fetch(`${base}/api/locations${q}`)
       .then(async (r) => {
         if (!r.ok) {
           const t = await r.text()

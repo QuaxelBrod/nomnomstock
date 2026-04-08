@@ -11,9 +11,10 @@ export default function Recommendations() {
   const [items, setItems] = useState<Recommendation[]>([])
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
 
   useEffect(() => {
-    fetch('/api/shopping/recent-removed')
+    fetch(`${base || ''}/api/shopping/recent-removed`)
       .then((r) => r.json())
       .then((data) => setItems(data || []))
       .catch(() => {})
@@ -22,7 +23,7 @@ export default function Recommendations() {
   async function addProduct(productId: number) {
     setLoading(true)
     try {
-      const res = await fetch('/api/shopping', {
+      const res = await fetch(`${base || ''}/api/shopping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId, quantity: 1 }),

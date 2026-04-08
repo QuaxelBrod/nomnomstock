@@ -13,6 +13,7 @@ export default function ShoppingItem({ item }: { item: any }) {
   const [note, setNote] = useState(item.note || '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const openModal = () => setOpen(true)
   const closeModal = () => setOpen(false)
@@ -20,7 +21,7 @@ export default function ShoppingItem({ item }: { item: any }) {
   const save = async () => {
     setSaving(true)
     try {
-      const res = await fetch(`/api/shopping/${item.id}`, {
+      const res = await fetch(`${base}/api/shopping/${item.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity, note }),
@@ -43,7 +44,7 @@ export default function ShoppingItem({ item }: { item: any }) {
     e.stopPropagation()
     setDeleting(true)
     try {
-      const res = await fetch(`/api/shopping/${item.id}`, { method: 'DELETE' })
+      const res = await fetch(`${base}/api/shopping/${item.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Fehler beim Löschen')
       try {
         router.refresh()

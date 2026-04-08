@@ -19,12 +19,13 @@ export default function StockList() {
   const [locations, setLocations] = useState<Array<{ id: number; name: string }>>([])
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   useEffect(() => {
       setError(null)
       ;(async () => {
         try {
-          const r = await fetch('/api/stock')
+          const r = await fetch(`${base}/api/stock`)
           if (!r.ok) {
             const t = await r.text()
             throw new Error(t || `Status ${r.status}`)
@@ -39,7 +40,7 @@ export default function StockList() {
       // fetch locations for filter
       ;(async () => {
         try {
-          const r2 = await fetch('/api/locations')
+          const r2 = await fetch(`${base}/api/locations`)
           const ldata = await r2.json()
           setLocations(Array.isArray(ldata) ? ldata : [])
         } catch (e) {
@@ -51,13 +52,13 @@ export default function StockList() {
   const reduce = async (id: number) => {
     const amt = Number(prompt('Menge entnehmen (Zahl)', '1')) || 0
     const toShopping = confirm('Auf Einkaufsliste setzen, falls leer?')
-    await fetch(`/api/stock/${id}/reduce`, {
+    await fetch(`${base}/api/stock/${id}/reduce`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: amt, toShopping }),
     })
     // reload
-    const res = await fetch('/api/stock')
+    const res = await fetch(`${base}/api/stock`)
     setItems(await res.json())
   }
 

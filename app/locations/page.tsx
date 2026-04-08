@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react'
 export default function LocationsPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
   const householdId = (session as any)?.user?.householdId
   const [locations, setLocations] = useState<any[]>([])
   const [name, setName] = useState('')
@@ -19,7 +20,8 @@ export default function LocationsPage() {
     setError(null)
     try {
       const q = householdId ? `?householdId=${householdId}` : ''
-      const res = await fetch(`/api/locations${q}`)
+      const apiPath = `${base || ''}/api/locations${q}`
+      const res = await fetch(apiPath)
       if (!res.ok) {
         const t = await res.text()
         throw new Error(t || 'Error')
@@ -38,7 +40,8 @@ export default function LocationsPage() {
     e.preventDefault()
     if (!name) return
     try {
-      await fetch('/api/locations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, householdId }) })
+      const createPath = `${base || ''}/api/locations`
+      await fetch(createPath, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, householdId }) })
       setName('')
       load()
     } catch (e) {
@@ -48,7 +51,8 @@ export default function LocationsPage() {
 
   const remove = async (id: number) => {
     if (!confirm('Löschen?')) return
-    await fetch(`/api/locations/${id}`, { method: 'DELETE' })
+    const delPath = `${base || ''}/api/locations/${id}`
+    await fetch(delPath, { method: 'DELETE' })
     load()
   }
 

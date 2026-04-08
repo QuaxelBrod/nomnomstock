@@ -6,6 +6,7 @@ import CameraCapture from './CameraCapture'
 import QuantityField from './QuantityField'
 
 export default function AddStockModal({ visible, product, onClose, onSaved, defaultLocationId }: { visible: boolean, product: any | null, onClose: () => void, onSaved?: () => void, defaultLocationId?: number | null }) {
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
   const [locationId, setLocationId] = useState<number | null>(defaultLocationId ?? null)
   const [quantity, setQuantity] = useState<number>(1)
   const [saving, setSaving] = useState(false)
@@ -24,7 +25,8 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
   const save = async () => {
     setSaving(true)
     try {
-      const res = await fetch('/api/stock', {
+      const apiPath = `${base || ''}/api/stock`
+      const res = await fetch(apiPath, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product.id, quantity: Number(quantity) || 1, locationId })
       })
@@ -57,7 +59,7 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
                   <button className="px-3 py-1 border rounded text-red-600" onClick={async () => {
                     if (!confirm('Foto wirklich löschen?')) return
                     try {
-                      const res = await fetch(`/api/products/${product.id}/image`, { method: 'DELETE' })
+                      const res = await fetch(`${base || ''}/api/products/${product.id}/image`, { method: 'DELETE' })
                       if (!res.ok) throw new Error('delete failed')
                       // update local product
                       if (product) product.image = null
@@ -71,7 +73,7 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
                     <CameraCapture onCaptured={async (dataUrl) => {
                       try {
                         setUploadingImage(true)
-                        const res = await fetch(`/api/products/${product.id}/image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: dataUrl }) })
+                        const res = await fetch(`${base || ''}/api/products/${product.id}/image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: dataUrl }) })
                         const body = await res.json()
                         if (!res.ok) throw new Error(body?.error || 'upload failed')
                         if (product) product.image = body.url
@@ -95,7 +97,7 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
                     <CameraCapture onCaptured={async (dataUrl) => {
                       try {
                         setUploadingImage(true)
-                        const res = await fetch(`/api/products/${product.id}/image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: dataUrl }) })
+                        const res = await fetch(`${base || ''}/api/products/${product.id}/image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: dataUrl }) })
                         const body = await res.json()
                         if (!res.ok) throw new Error(body?.error || 'upload failed')
                         // update local product image so UI shows it

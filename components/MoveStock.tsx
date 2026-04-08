@@ -10,6 +10,7 @@ type Stock = { id: number; quantity: number; unit?: string | null; location?: { 
 export default function MoveStock({ productId, stocks }: { productId: number; stocks: Stock[] }) {
   const { data: session } = useSession()
   const router = useRouter()
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
   const [open, setOpen] = useState(false)
   const [locations, setLocations] = useState<any[]>([])
   const [fromId, setFromId] = useState<number | null>(stocks?.[0]?.id ?? null)
@@ -20,7 +21,7 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
   useEffect(() => {
     if (!open) return
     ;(async () => {
-      const r = await fetch('/api/locations')
+      const r = await fetch(`${base || ''}/api/locations`)
       const data = await r.json()
       setLocations(Array.isArray(data) ? data : [])
       if (data && data.length > 0) setToLoc(data[0].id)
@@ -39,7 +40,7 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
     if (amount <= 0 || amount > fromStock.quantity) return setError('Ungültige Menge')
 
     const body = { fromStockId: fromId, toLocationId: toLoc, amount }
-    const r = await fetch('/api/stock/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const r = await fetch(`${base || ''}/api/stock/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (!r.ok) {
       const t = await r.json().catch(() => null)
       setError((t && t.error) || `Fehler ${r.status}`)

@@ -13,6 +13,7 @@ export default function ProfilPage() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [saving, setSaving] = useState(false)
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null)
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   useEffect(() => {
     if (!session?.user?.email) return
@@ -22,7 +23,7 @@ export default function ProfilPage() {
       try {
         const email = session.user?.email
         if (!email) return
-        const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+        const res = await fetch(`${base}/api/profile?email=${encodeURIComponent(email)}`)
         if (!res.ok) return
         const data = await res.json()
         if (data) {
@@ -97,7 +98,7 @@ export default function ProfilPage() {
       const f = fileRef.current?.files?.[0]
       if (f) fd.append('image', f)
       else if (capturedBlobRef.current) fd.append('image', capturedBlobRef.current, 'capture.png')
-      const res = await fetch('/api/profile', { method: 'POST', body: fd })
+      const res = await fetch(`${base}/api/profile`, { method: 'POST', body: fd })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Save failed')
       // If server returned image path, show that instead of blob

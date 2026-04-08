@@ -18,6 +18,7 @@ type Recommendation = {
 
 export default function AddShoppingItem({ showOnlyButton }: Props) {
   const router = useRouter()
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState<number>(1)
@@ -26,7 +27,7 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
 
   useEffect(() => {
-    fetch('/api/shopping/recent-removed')
+    fetch(`${base || ''}/api/shopping/recent-removed`)
       .then((r) => r.json())
       .then((data) => setRecommendations(data || []))
       .catch(() => {})
@@ -38,7 +39,7 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
   async function save() {
     setSaving(true)
     try {
-      await fetch('/api/shopping', {
+      await fetch(`${base || ''}/api/shopping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, quantity, note }),

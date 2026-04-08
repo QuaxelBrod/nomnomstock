@@ -25,6 +25,7 @@ export default function ScanPage() {
 
   const lastLookupRef = useRef<{ code: string; ts: number } | null>(null)
   const lastQueriedRef = useRef<string | null>(null)
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const handleDetected = useCallback(async (c: string, force = false) => {
     if (!c) return
@@ -41,7 +42,7 @@ export default function ScanPage() {
     setCode(c)
     setLoading(true)
     try {
-      const res = await fetch('/api/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: c }) })
+      const res = await fetch(`${base}/api/lookup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: c }) })
       const body = await res.json()
       if (body && body.found && body.product) setProduct(body.product)
       else setProduct(null)
@@ -59,7 +60,7 @@ export default function ScanPage() {
     if (!code) return
     const qty = Number(quantity) || 1
     // Simple create by barcode — backend will lookup/create product
-    await fetch('/api/stock', {
+    await fetch(`${base}/api/stock`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ barcode: code, quantity: qty, locationId }),
@@ -75,7 +76,7 @@ export default function ScanPage() {
     if (locationId !== null) return
     ;(async () => {
       try {
-        const res = await fetch('/api/locations')
+        const res = await fetch(`${base}/api/locations`)
         if (!res.ok) return
         const data = await res.json()
         if (Array.isArray(data) && data.length > 0) setLocationId(data[0].id)

@@ -14,11 +14,12 @@ const PRESET = [
 export default function ManualAdd({ onAdded }: { onAdded: (p: any) => void }) {
   const [term, setTerm] = useState('')
   const [creating, setCreating] = useState(false)
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const create = async (name: string) => {
     setCreating(true)
     try {
-      const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const res = await fetch(`${base}/api/products`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
       const p = await res.json()
       if (!res.ok) throw new Error(p?.error || 'create failed')
       onAdded(p)

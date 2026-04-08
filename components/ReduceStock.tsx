@@ -10,6 +10,7 @@ export default function ReduceStock({ stockId }: { stockId: number }) {
   const [amount, setAmount] = useState<number>(1)
   const [toShopping, setToShopping] = useState<boolean>(false)
   const [saving, setSaving] = useState<boolean>(false)
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const openModal = () => {
     setAmount(1)
@@ -24,7 +25,7 @@ export default function ReduceStock({ stockId }: { stockId: number }) {
     if (!amt || amt <= 0) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/stock/${stockId}/reduce`, {
+      const res = await fetch(`${base}/api/stock/${stockId}/reduce`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: amt, toShopping })
       })
