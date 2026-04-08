@@ -2,6 +2,20 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# build args used to inject envs at build time for Next.js
+ARG NEXT_PUBLIC_BASE_PATH
+ARG NEXT_PUBLIC_BASE_URL
+ARG BASE_PATH
+ARG APP_URL
+ARG NEXTAUTH_URL
+
+# export them as env so Next's build can access via process.env
+ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
+ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+ENV BASE_PATH=${BASE_PATH}
+ENV APP_URL=${APP_URL}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+
 # install dev deps to run build and generate prisma client
 COPY package*.json ./
 

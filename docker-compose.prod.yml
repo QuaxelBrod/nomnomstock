@@ -5,6 +5,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH}
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+        BASE_PATH: ${BASE_PATH}
+        APP_URL: ${APP_URL}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
     restart: unless-stopped
     environment:
       NODE_ENV: production
