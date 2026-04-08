@@ -2,6 +2,28 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
+  // Ensure DB has required columns (idempotent)
+  // Some deployments may have an older DB where migrations were not applied
+  // Query pragma table_info and add columns if missing.
+  try {
+    const cols = await prisma.$queryRawUnsafe("PRAGMA table_info('User');");
+    const names = (cols || []).map((c) => c.name);
+    if (!names.includes('image')) {
+      // SQLite allows adding columns; default NULL
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "image" TEXT;');
+      console.log('[seed] added column `image`');
+    }
+    if (!names.includes('password')) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "password" TEXT;');
+      console.log('[seed] added column `password`');
+    }
+    if (!names.includes('isActive')) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT 0;');
+      console.log('[seed] added column `isActive`');
+    }
+  } catch (e) {
+    console.warn('[seed] could not ensure columns:', e && e.message ? e.message : e);
+  }
   const household = await prisma.household.upsert({
     where: { name: 'Default Household' },
     update: {},
