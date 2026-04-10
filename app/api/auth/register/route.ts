@@ -12,7 +12,9 @@ export async function POST(req: Request) {
   try {
     console.log('[auth/register] request received')
     // Best effort migration safety for older SQLite files.
-    try { await (await import('../../../../lib/dbFixes')).ensurePasswordColumn() } catch {}
+    const dbFixes = await import('../../../../lib/dbFixes')
+    try { await dbFixes.ensurePasswordColumn() } catch {}
+    await dbFixes.ensureVerificationTokenTable()
 
     const body = await req.json()
     const { email, name, password, inviteToken } = body

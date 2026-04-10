@@ -4,6 +4,7 @@ import { prisma } from '../../../../lib/prisma'
 export async function GET(req: Request) {
   try {
     console.log('[auth/activate] request received')
+    await (await import('../../../../lib/dbFixes')).ensureVerificationTokenTable()
     const url = new URL(req.url)
     const token = url.searchParams.get('token')
     if (!token) {

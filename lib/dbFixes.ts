@@ -27,3 +27,24 @@ export async function ensureImageColumn() {
     console.error('ensureImageColumn error', err)
   }
 }
+
+export async function ensureVerificationTokenTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "VerificationToken" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "email" TEXT NOT NULL,
+        "token" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "expiresAt" DATETIME,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    await prisma.$executeRawUnsafe(
+      'CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_token_key" ON "VerificationToken"("token")'
+    )
+  } catch (err) {
+    console.error('ensureVerificationTokenTable error', err)
+    throw err
+  }
+}

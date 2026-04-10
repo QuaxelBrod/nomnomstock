@@ -14,7 +14,7 @@ echo "[init] generating prisma client"
 npx prisma generate
 
 echo "[init] running migrations"
-npx prisma migrate deploy || true
+npx prisma migrate deploy
 
 if [ "$FIRST" -eq 1 ]; then
   echo "[init] database created — running seed (if present)"

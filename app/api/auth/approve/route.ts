@@ -9,6 +9,7 @@ const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://loc
 export async function GET(req: Request) {
   try {
     console.log('[auth/approve] request received')
+    await (await import('../../../../lib/dbFixes')).ensureVerificationTokenTable()
     const url = new URL(req.url)
     const token = url.searchParams.get('token')
     if (!token) {

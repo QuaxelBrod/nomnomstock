@@ -11,6 +11,7 @@ const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://loc
 export async function POST(req: NextRequest) {
   try {
     console.log('[auth/invite] request received')
+    await (await import('../../../../lib/dbFixes')).ensureVerificationTokenTable()
     const auth = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
     if (!auth?.email) {
       console.warn('[auth/invite] unauthorized request')
