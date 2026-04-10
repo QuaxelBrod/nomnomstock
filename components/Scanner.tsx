@@ -5,9 +5,10 @@ import { BrowserMultiFormatReader, Result } from '@zxing/library'
 
 type Props = {
   onDetected?: (code: string) => void
+  cameraMode?: 'environment' | 'user'
 }
 
-export default function Scanner({ onDetected }: Props) {
+export default function Scanner({ onDetected, cameraMode = 'environment' }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [result, setResult] = useState<string | null>(null)
 
@@ -63,12 +64,14 @@ export default function Scanner({ onDetected }: Props) {
           codeReader.reset()
         } catch (_) {}
 
-        // Use standard Web API to enumerate devices, compatible across library versions
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const videoDevices = devices.filter((d) => d.kind === 'videoinput')
-        const deviceId = (videoDevices && videoDevices.length && (videoDevices[0] as any).deviceId) || undefined
+        // Prefer facingMode where possible (mobile camera switch), fallback to deviceId selection.
+        const constraints = {
+          video: {
+            facingMode: { ideal: cameraMode },
+          },
+        }
 
-        codeReader.decodeFromVideoDevice(deviceId, videoRef.current, (res: Result | undefined, err: any) => {
+        const onFrame = (res: Result | undefined, err: any) => {
           if (!mounted) return
           if (res) {
             const code = res.getText()
@@ -86,7 +89,19 @@ export default function Scanner({ onDetected }: Props) {
               if (onDetected) onDetected(code)
             }
           }
-        })
+        }
+
+        const anyReader = codeReader as any
+        if (typeof anyReader.decodeFromConstraints === 'function') {
+          await anyReader.decodeFromConstraints(constraints, videoRef.current, onFrame)
+        } else {
+          const devices = await navigator.mediaDevices.enumerateDevices()
+          const videoDevices = devices.filter((d) => d.kind === 'videoinput')
+          const wanted = cameraMode === 'environment' ? /(back|rear|environment)/i : /(front|user|face)/i
+          const selected = videoDevices.find((d) => wanted.test(d.label || '')) || videoDevices[0]
+          const deviceId = selected?.deviceId
+          await codeReader.decodeFromVideoDevice(deviceId, videoRef.current, onFrame)
+        }
 
         startedRef.current = true
       } catch (e) {
@@ -110,7 +125,7 @@ export default function Scanner({ onDetected }: Props) {
       document.removeEventListener('visibilitychange', handleVisibility)
       stopScanner()
     }
-  }, [onDetected])
+  }, [onDetected, cameraMode])
 
   return (
     <div>

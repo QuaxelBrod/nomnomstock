@@ -22,6 +22,7 @@ export default function ScanPage() {
   const [showCheck, setShowCheck] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [modalProduct, setModalProduct] = useState<any | null>(null)
+  const [cameraMode, setCameraMode] = useState<'environment' | 'user'>('environment')
 
   const lastLookupRef = useRef<{ code: string; ts: number } | null>(null)
   const lastQueriedRef = useRef<string | null>(null)
@@ -87,8 +88,25 @@ export default function ScanPage() {
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto pb-28 md:pb-20">
       <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Scan</h2>
+      <div className="mb-3 flex items-center gap-2">
+        <span className="text-sm text-gray-600 dark:text-gray-300">Kamera:</span>
+        <button
+          type="button"
+          onClick={() => setCameraMode('environment')}
+          className={`px-3 py-1 rounded border text-sm ${cameraMode === 'environment' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600'}`}
+        >
+          Rueckkamera
+        </button>
+        <button
+          type="button"
+          onClick={() => setCameraMode('user')}
+          className={`px-3 py-1 rounded border text-sm ${cameraMode === 'user' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600'}`}
+        >
+          Frontkamera
+        </button>
+      </div>
       <div className="mb-4">
-        <Scanner onDetected={handleDetected} />
+        <Scanner onDetected={handleDetected} cameraMode={cameraMode} />
       </div>
 
       <div className="mt-2 space-y-4">
