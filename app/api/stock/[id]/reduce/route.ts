@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../../lib/prisma'
 import { getToken } from 'next-auth/jwt'
+import { ensureShoppingListItemTable } from '../../../../../lib/dbFixes'
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   // auth
@@ -32,6 +33,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   // if requested, add to shopping list (create or increment existing)
   if (toShopping && stock.householdId) {
+    await ensureShoppingListItemTable()
     const existing = await prisma.shoppingListItem.findFirst({ where: { productId: stock.productId, householdId: stock.householdId } })
     if (existing) {
       await prisma.shoppingListItem.update({ where: { id: existing.id }, data: { quantity: existing.quantity + 1 } })

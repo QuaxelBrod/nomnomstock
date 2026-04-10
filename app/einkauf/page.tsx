@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { ensureShoppingListItemTable } from '../../lib/dbFixes'
 import ShoppingItem from '../../components/ShoppingItem'
 import AddShoppingItem from '../../components/AddShoppingItem'
 import Recommendations from '../../components/Recommendations'
@@ -8,6 +9,7 @@ export default async function EinkaufPage() {
   let loadError: string | null = null
 
   try {
+    await ensureShoppingListItemTable()
     items = await prisma.shoppingListItem.findMany({
       orderBy: { createdAt: 'desc' },
       include: { product: true, addedBy: true },
