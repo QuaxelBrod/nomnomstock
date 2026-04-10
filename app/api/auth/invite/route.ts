@@ -5,7 +5,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { renderTemplate, sendMail } from '../../../../lib/mail'
 
-const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 export async function POST(req: Request) {
   try {
@@ -19,8 +19,8 @@ export async function POST(req: Request) {
     // send invite email
     try {
       const tpl = readFileSync(path.join(process.cwd(), 'emails', 'invite.txt'), 'utf8')
-      const registerUrl = `${APP_URL}/register?invite=${token}`
-      const activateUrl = `${APP_URL}/api/auth/activate?token=${token}`
+      const registerUrl = `${AUTH_URL}/auth/register?invite=${token}`
+      const activateUrl = `${AUTH_URL}/api/auth/activate?token=${token}`
       const text = renderTemplate(tpl, { inviter: inviter || 'Einladung', registerUrl, activateUrl })
       await sendMail({ to: email, subject: 'Du wurdest eingeladen', text })
     } catch (e) { console.error(e) }

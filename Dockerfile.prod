@@ -36,6 +36,8 @@ FROM node:18-bullseye-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ARG NEXTAUTH_URL
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 
 # copy package and node_modules (prisma client included)
 COPY --from=builder /app/package*.json ./

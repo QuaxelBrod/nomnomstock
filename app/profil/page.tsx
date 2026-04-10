@@ -118,7 +118,7 @@ export default function ProfilPage() {
         <div className="mt-4">
           <div className="text-sm">Angemeldet als <strong className="text-black dark:text-white">{session.user?.email || session.user?.name}</strong></div>
           <div className="mt-3">
-            <button onClick={() => signOut()} className="action-fullmobile px-3 py-1 text-sm text-red-600 border rounded">Logout</button>
+            <button onClick={() => signOut({ callbackUrl: `${base}/auth/login` })} className="action-fullmobile px-3 py-1 text-sm text-red-600 border rounded">Logout</button>
           </div>
 
           <div className="mt-6">

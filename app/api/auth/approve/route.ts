@@ -4,7 +4,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { renderTemplate, sendMail } from '../../../../lib/mail'
 
-const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 export async function GET(req: Request) {
   try {
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     // send activation email to user
     try {
       const tpl = readFileSync(path.join(process.cwd(), 'emails', 'activation.txt'), 'utf8')
-      const activateUrl = `${APP_URL}/api/auth/activate?token=${actToken}`
+      const activateUrl = `${AUTH_URL}/api/auth/activate?token=${actToken}`
       const text = renderTemplate(tpl, { name: row.email, activateUrl })
       await sendMail({ to: row.email, subject: 'Account aktivieren', text })
     } catch (e) { console.error(e) }

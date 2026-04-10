@@ -11,18 +11,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    const res = await signIn('credentials', { redirect: false, email, password })
+    const res = await signIn('credentials', { redirect: false, email, password, callbackUrl: `${base}/` })
     // @ts-ignore
     if (res?.error) {
       // @ts-ignore
       setError(res.error)
       return
     }
-    router.push('/')
+    router.push(`${base}/`)
   }
 
   return (
@@ -45,7 +46,7 @@ export default function LoginPage() {
         {error && <div className="text-red-600">{error}</div>}
         <button className="action-fullmobile px-3 py-2 bg-blue-600 text-white rounded">Login</button>
       </form>
-      <p className="mt-3 text-sm">Noch keinen Account? <a href="/auth/register" className="text-blue-600">Registrieren</a></p>
+      <p className="mt-3 text-sm">Noch keinen Account? <a href={`${base}/auth/register`} className="text-blue-600">Registrieren</a></p>
     </main>
   )
 }

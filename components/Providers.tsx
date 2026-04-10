@@ -5,9 +5,9 @@ import React from 'react'
 import ThemeProvider from './ThemeProvider'
 import ServiceWorkerRegister from './ServiceWorkerRegister'
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children, authBasePath }: { children: React.ReactNode; authBasePath?: string }) {
   return (
-    <SessionProvider>
+    <SessionProvider basePath={authBasePath || '/api/auth'}>
       <ThemeProvider>
         {children}
         <ServiceWorkerRegister />

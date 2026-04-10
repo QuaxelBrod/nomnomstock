@@ -11,6 +11,18 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+  const authBasePrefix = (() => {
+    try {
+      const raw = process.env.NEXTAUTH_URL || ''
+      if (!raw) return base
+      const parsed = new URL(raw)
+      const p = parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')
+      return p || base
+    } catch {
+      return base
+    }
+  })()
+  const authBasePath = `${authBasePrefix}/api/auth`.replace(/\/\/+/g, '/')
 
   return (
     <html lang="de">
@@ -21,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
       </head>
       <body className="pb-28 md:pb-20">
-        <Providers>
+        <Providers authBasePath={authBasePath}>
           {children}
           <BottomNav />
         </Providers>

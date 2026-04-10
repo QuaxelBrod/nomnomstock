@@ -5,7 +5,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { sendMail, renderTemplate } from '../../../../lib/mail'
 
-const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 export async function POST(req: Request) {
   try {
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       // send activation email
       try {
         const tpl = readFileSync(path.join(process.cwd(), 'emails', 'activation.txt'), 'utf8')
-        const activateUrl = `${APP_URL}/api/auth/activate?token=${token}`
+        const activateUrl = `${AUTH_URL}/api/auth/activate?token=${token}`
         const text = renderTemplate(tpl, { name: name || email, activateUrl })
         await sendMail({ to: email, subject: 'Account aktivieren', text })
       } catch (e) { console.error(e) }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     await prisma.verificationToken.create({ data: { email, token: approvalToken, type: 'approval', expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) } })
     try {
       const tpl = readFileSync(path.join(process.cwd(), 'emails', 'approval-request.txt'), 'utf8')
-      const approveUrl = `${APP_URL}/api/auth/approve?token=${approvalToken}`
+      const approveUrl = `${AUTH_URL}/api/auth/approve?token=${approvalToken}`
       const superadmin = process.env.SUPER_ADMIN_EMAIL
       const text = renderTemplate(tpl, { email, approveUrl })
       if (superadmin) await sendMail({ to: superadmin, subject: 'Registrierungsanfrage', text })
