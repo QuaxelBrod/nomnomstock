@@ -62,7 +62,7 @@ services:
       - data:/data
     ports:
       - "8068:3001"
-    command: sh -c "npx prisma generate && npx prisma studio --port 3001"
+    command: sh -c "npx prisma generate && npx prisma studio --port 3001 --host 0.0.0.0"
     restart: 'no'
 
 volumes:
