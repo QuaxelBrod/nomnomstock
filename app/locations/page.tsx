@@ -68,7 +68,12 @@ export default function LocationsPage() {
       {session && (
         <>
           <form onSubmit={create} className="mb-4 flex gap-2">
-            <input className="border px-2 py-1 rounded" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <input
+              className="border px-2 py-1 rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 border-gray-300 dark:border-gray-600"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
             <button className="action-fullmobile px-3 py-1 bg-green-600 text-white rounded" type="submit">Anlegen</button>
           </form>
 

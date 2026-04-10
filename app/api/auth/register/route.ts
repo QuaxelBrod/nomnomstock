@@ -8,6 +8,23 @@ import bcrypt from 'bcryptjs'
 
 const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
+async function createHouseholdForUser(email: string, name?: string | null) {
+  const baseName = (name || email.split('@')[0] || 'Haushalt').trim()
+  const safeBase = baseName.length > 40 ? baseName.slice(0, 40) : baseName
+
+  for (let i = 0; i < 20; i++) {
+    const candidate = i === 0 ? `${safeBase} Haushalt` : `${safeBase} Haushalt ${i + 1}`
+    const existing = await prisma.household.findUnique({ where: { name: candidate } })
+    if (!existing) {
+      const household = await prisma.household.create({ data: { name: candidate } })
+      return household.id
+    }
+  }
+
+  const household = await prisma.household.create({ data: { name: `Haushalt ${Date.now()}` } })
+  return household.id
+}
+
 export async function POST(req: Request) {
   try {
     console.log('[auth/register] request received')
@@ -92,6 +109,17 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         householdId: invitedHouseholdId,
       })
+    } else {
+      // No invite flow: every newly registered user owns a dedicated household.
+      const userAfterUpsert = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+      if (!userAfterUpsert?.householdId) {
+        const householdId = await createHouseholdForUser(normalizedEmail, normalizedName)
+        await prisma.user.update({ where: { email: normalizedEmail }, data: { householdId } as any })
+        console.log('[auth/register] created and assigned own household', {
+          email: normalizedEmail,
+          householdId,
+        })
+      }
     }
 
     if (!emailAuthEnabled || skipSuper) {

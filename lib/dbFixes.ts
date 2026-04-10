@@ -57,6 +57,7 @@ export async function ensureShoppingListItemTable() {
         "productId" INTEGER NOT NULL,
         "householdId" INTEGER NOT NULL,
         "quantity" REAL NOT NULL DEFAULT 1,
+        "note" TEXT,
         "unit" TEXT,
         "addedById" INTEGER,
         "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -65,8 +66,23 @@ export async function ensureShoppingListItemTable() {
         CONSTRAINT "ShoppingListItem_addedById_fkey" FOREIGN KEY ("addedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
       )
     `)
+    await ensureShoppingListItemColumns()
   } catch (err) {
     console.error('ensureShoppingListItemTable error', err)
+    throw err
+  }
+}
+
+export async function ensureShoppingListItemColumns() {
+  try {
+    const rows: Array<{ name: string }> = await prisma.$queryRaw`PRAGMA table_info('ShoppingListItem')`
+    const hasNote = rows.some((r: any) => r.name === 'note')
+    if (!hasNote) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "ShoppingListItem" ADD COLUMN note TEXT')
+      console.warn('[dbFixes] Added missing note column to ShoppingListItem table')
+    }
+  } catch (err) {
+    console.error('ensureShoppingListItemColumns error', err)
     throw err
   }
 }

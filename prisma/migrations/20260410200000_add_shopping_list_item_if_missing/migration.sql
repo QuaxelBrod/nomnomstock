@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "ShoppingListItem" (
   "productId" INTEGER NOT NULL,
   "householdId" INTEGER NOT NULL,
   "quantity" REAL NOT NULL DEFAULT 1,
+  "note" TEXT,
   "unit" TEXT,
   "addedById" INTEGER,
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
