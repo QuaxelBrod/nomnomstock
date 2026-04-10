@@ -76,11 +76,11 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
 
       {open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white rounded p-6 w-96">
-            <h3 className="text-lg font-semibold mb-3">Neuen Einkaufseintrag</h3>
+          <div className="bg-white dark:bg-gray-900 rounded p-6 w-96 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Neuen Einkaufseintrag</h3>
             <label className="block mb-2">
               Name
-              <input className="mt-1 w-full border p-2" value={name} onChange={(e) => setName(e.target.value)} />
+              <input className="mt-1 w-full border p-2 rounded text-black dark:text-white bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400" value={name} onChange={(e) => setName(e.target.value)} />
             </label>
             <label className="block mb-2">
               Menge
@@ -90,7 +90,7 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
             </label>
             <label className="block mb-4">
               Anmerkung
-              <input className="mt-1 w-full border p-2" value={note} onChange={(e) => setNote(e.target.value)} />
+              <input className="mt-1 w-full border p-2 rounded text-black dark:text-white bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400" value={note} onChange={(e) => setNote(e.target.value)} />
             </label>
             <div className="flex justify-end gap-2">
               <button className="btn" onClick={closeModal} disabled={saving}>Abbrechen</button>

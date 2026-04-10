@@ -57,13 +57,13 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
 
       {open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded w-96">
-            <h3 className="font-medium mb-3">Produkt verschieben</h3>
+          <div className="bg-white dark:bg-gray-900 p-4 rounded w-96 border border-gray-200 dark:border-gray-700">
+            <h3 className="font-medium mb-3 text-gray-900 dark:text-gray-100">Produkt verschieben</h3>
             {!session && <div className="text-sm text-gray-600 mb-2">Bitte einloggen.</div>}
 
             <div className="mb-2">
-              <label className="block text-sm">Von (Quelle)</label>
-              <select className="w-full p-2 border rounded" value={fromId ?? ''} onChange={(e) => setFromId(Number(e.target.value))}>
+              <label className="block text-sm text-gray-700 dark:text-gray-300">Von (Quelle)</label>
+              <select className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600" value={fromId ?? ''} onChange={(e) => setFromId(Number(e.target.value))}>
                 {stocks.map((s) => (
                   <option key={s.id} value={s.id}>{s.quantity} {s.unit ?? ''} — {s.location?.name ?? '—'}</option>
                 ))}
@@ -71,8 +71,8 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
             </div>
 
             <div className="mb-2">
-              <label className="block text-sm">Nach (Ziel)</label>
-              <select className="w-full p-2 border rounded" value={toLoc ?? ''} onChange={(e) => setToLoc(Number(e.target.value))}>
+              <label className="block text-sm text-gray-700 dark:text-gray-300">Nach (Ziel)</label>
+              <select className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600" value={toLoc ?? ''} onChange={(e) => setToLoc(Number(e.target.value))}>
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
@@ -80,7 +80,7 @@ export default function MoveStock({ productId, stocks }: { productId: number; st
             </div>
 
             <div className="mb-3">
-              <label className="block text-sm">Menge</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300">Menge</label>
               <QuantityField value={amount} onChange={(v: number) => setAmount(v)} />
             </div>
 

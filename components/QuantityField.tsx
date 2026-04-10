@@ -41,18 +41,18 @@ export default function QuantityField({ value, min = 1, onChange, className = ''
   }
 
   return (
-    <div className={`inline-flex items-center border rounded ${className}`}>
-      <button type="button" onClick={dec} className="px-2 py-1 text-sm hover:bg-gray-100">−</button>
+    <div className={`inline-flex items-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 ${className}`}>
+      <button type="button" onClick={dec} className="px-2 py-1 text-sm text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">−</button>
       <input
         type="number"
-        className="w-20 px-2 py-1 text-center outline-none"
+        className="w-20 px-2 py-1 text-center outline-none text-black dark:text-white bg-white dark:bg-gray-800"
         min={min}
         value={str}
         onChange={(e) => setStr(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') commit((e.target as HTMLInputElement).value) }}
       />
-      <button type="button" onClick={inc} className="px-2 py-1 text-sm hover:bg-gray-100">+</button>
+      <button type="button" onClick={inc} className="px-2 py-1 text-sm text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">+</button>
     </div>
   )
 }
