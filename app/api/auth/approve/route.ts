@@ -6,6 +6,17 @@ import { renderTemplate, sendMail } from '../../../../lib/mail'
 
 const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
+function authBaseFromEnv() {
+  try {
+    const raw = process.env.NEXTAUTH_URL || ''
+    if (!raw) return ''
+    const p = new URL(raw).pathname
+    return p === '/' ? '' : p.replace(/\/$/, '')
+  } catch {
+    return ''
+  }
+}
+
 export async function GET(req: Request) {
   try {
     console.log('[auth/approve] request received')
@@ -14,12 +25,14 @@ export async function GET(req: Request) {
     const token = url.searchParams.get('token')
     if (!token) {
       console.warn('[auth/approve] missing token')
-      return NextResponse.json({ error: 'missing' }, { status: 400 })
+      const target = `${authBaseFromEnv()}/auth/approval?status=error`
+      return NextResponse.redirect(new URL(target, req.url))
     }
     const row = await prisma.verificationToken.findUnique({ where: { token } as any })
     if (!row || row.type !== 'approval') {
       console.warn('[auth/approve] invalid token')
-      return NextResponse.json({ error: 'invalid' }, { status: 400 })
+      const target = `${authBaseFromEnv()}/auth/approval?status=error`
+      return NextResponse.redirect(new URL(target, req.url))
     }
 
     // create activation token for user
@@ -37,13 +50,16 @@ export async function GET(req: Request) {
       await sendMail({ to: row.email, subject: 'Account aktivieren', text })
     } catch (e) {
       console.error('[auth/approve] activation email failed', e)
-      return NextResponse.json({ error: 'activation_mail_failed' }, { status: 500 })
+      const target = `${authBaseFromEnv()}/auth/approval?status=error`
+      return NextResponse.redirect(new URL(target, req.url))
     }
 
-    return NextResponse.json({ ok: true })
+    const target = `${authBaseFromEnv()}/auth/approval?status=success`
+    return NextResponse.redirect(new URL(target, req.url))
   } catch (err: any) {
     console.error('[auth/approve] fatal error', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    const target = `${authBaseFromEnv()}/auth/approval?status=error`
+    return NextResponse.redirect(new URL(target, req.url))
   }
 }
 

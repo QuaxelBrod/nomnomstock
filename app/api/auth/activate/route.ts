@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 
+function authBaseFromEnv() {
+  try {
+    const raw = process.env.NEXTAUTH_URL || ''
+    if (!raw) return ''
+    const p = new URL(raw).pathname
+    return p === '/' ? '' : p.replace(/\/$/, '')
+  } catch {
+    return ''
+  }
+}
+
 export async function GET(req: Request) {
   try {
     console.log('[auth/activate] request received')
@@ -9,22 +20,26 @@ export async function GET(req: Request) {
     const token = url.searchParams.get('token')
     if (!token) {
       console.warn('[auth/activate] missing token')
-      return NextResponse.json({ error: 'missing' }, { status: 400 })
+      const target = `${authBaseFromEnv()}/auth/activated?status=error&reason=missing`
+      return NextResponse.redirect(new URL(target, req.url))
     }
     const row = await prisma.verificationToken.findUnique({ where: { token } as any })
     if (!row || row.type !== 'activation') {
       console.warn('[auth/activate] invalid token')
-      return NextResponse.json({ error: 'invalid' }, { status: 400 })
+      const target = `${authBaseFromEnv()}/auth/activated?status=error&reason=invalid`
+      return NextResponse.redirect(new URL(target, req.url))
     }
 
     // activate user
     await prisma.user.update({ where: { email: row.email }, data: { isActive: true } as any })
     await prisma.verificationToken.delete({ where: { token } as any })
     console.log('[auth/activate] user activated', { email: row.email })
-    return NextResponse.json({ ok: true })
+    const target = `${authBaseFromEnv()}/auth/activated?status=success`
+    return NextResponse.redirect(new URL(target, req.url))
   } catch (err: any) {
     console.error('[auth/activate] fatal error', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    const target = `${authBaseFromEnv()}/auth/activated?status=error&reason=server`
+    return NextResponse.redirect(new URL(target, req.url))
   }
 }
 

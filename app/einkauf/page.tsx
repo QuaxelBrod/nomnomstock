@@ -4,14 +4,26 @@ import AddShoppingItem from '../../components/AddShoppingItem'
 import Recommendations from '../../components/Recommendations'
 
 export default async function EinkaufPage() {
-  const items = await prisma.shoppingListItem.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { product: true, addedBy: true },
-  })
+  let items: any[] = []
+  let loadError: string | null = null
+
+  try {
+    items = await prisma.shoppingListItem.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { product: true, addedBy: true },
+    })
+  } catch (err: any) {
+    console.error('[einkauf] failed to load shopping list', err)
+    loadError = 'Einkaufsliste konnte nicht geladen werden. Bitte Migrationen pruefen und erneut versuchen.'
+  }
 
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <h2 className="text-2xl sm:text-3xl font-semibold mb-3">Einkauf</h2>
+
+      {loadError && (
+        <p className="text-sm text-red-600 dark:text-red-400 mb-3">{loadError}</p>
+      )}
 
       {items.length === 0 ? (
         <p className="text-sm text-gray-600 dark:text-gray-300">Keine Einträge auf der Einkaufsliste.</p>

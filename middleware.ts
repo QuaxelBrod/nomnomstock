@@ -7,6 +7,8 @@ const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 const PUBLIC_PATHS_BASELESS = [
   '/auth/login',
   '/auth/register',
+  '/auth/activated',
+  '/auth/approval',
   '/api/auth',
   '/api/auth/',
   '/api/profile',
