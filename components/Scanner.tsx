@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from 'react'
-import { BrowserMultiFormatReader, Result } from '@zxing/library'
+import { BarcodeFormat, BrowserMultiFormatReader, DecodeHintType, Result } from '@zxing/library'
 
 type Props = {
   onDetected?: (code: string) => void
@@ -11,8 +11,11 @@ type Props = {
 export default function Scanner({ onDetected, cameraMode = 'environment' }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [result, setResult] = useState<string | null>(null)
+  const [torchSupported, setTorchSupported] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
 
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null)
+  const trackRef = useRef<MediaStreamTrack | null>(null)
   const startedRef = useRef(false)
   const lastCodeRef = useRef<string | null>(null)
   const lastTimeRef = useRef<number>(0)
@@ -45,9 +48,26 @@ export default function Scanner({ onDetected, cameraMode = 'environment' }: Prop
             // ignore
           }
         }
+        trackRef.current = null
+        setTorchSupported(false)
+        setTorchOn(false)
         startedRef.current = false
       } catch (e) {
         // ignore
+      }
+    }
+
+    const detectTorchSupport = () => {
+      try {
+        const stream = videoRef.current?.srcObject as MediaStream | null
+        const track = stream?.getVideoTracks?.()[0] || null
+        trackRef.current = track
+        const caps: any = track && typeof (track as any).getCapabilities === 'function'
+          ? (track as any).getCapabilities()
+          : null
+        setTorchSupported(!!caps?.torch)
+      } catch {
+        setTorchSupported(false)
       }
     }
 
@@ -56,7 +76,23 @@ export default function Scanner({ onDetected, cameraMode = 'environment' }: Prop
         if (!videoRef.current) return
 
         // instantiate reader once
-        if (!codeReaderRef.current) codeReaderRef.current = new BrowserMultiFormatReader()
+        if (!codeReaderRef.current) {
+          const hints = new Map<any, any>()
+          hints.set(DecodeHintType.TRY_HARDER, true)
+          hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+            BarcodeFormat.EAN_13,
+            BarcodeFormat.EAN_8,
+            BarcodeFormat.UPC_A,
+            BarcodeFormat.UPC_E,
+            BarcodeFormat.CODE_128,
+            BarcodeFormat.CODE_39,
+            BarcodeFormat.ITF,
+            BarcodeFormat.CODABAR,
+            BarcodeFormat.QR_CODE,
+            BarcodeFormat.DATA_MATRIX,
+          ])
+          codeReaderRef.current = new BrowserMultiFormatReader(hints, 200)
+        }
         const codeReader = codeReaderRef.current
 
         // ensure clean state
@@ -68,6 +104,10 @@ export default function Scanner({ onDetected, cameraMode = 'environment' }: Prop
         const constraints = {
           video: {
             facingMode: { ideal: cameraMode },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30, min: 15 },
+            focusMode: 'continuous',
           },
         }
 
@@ -103,6 +143,8 @@ export default function Scanner({ onDetected, cameraMode = 'environment' }: Prop
           await codeReader.decodeFromVideoDevice(deviceId, videoRef.current, onFrame)
         }
 
+        setTimeout(detectTorchSupport, 350)
+
         startedRef.current = true
       } catch (e) {
         console.error('Scanner start error', e)
@@ -127,6 +169,19 @@ export default function Scanner({ onDetected, cameraMode = 'environment' }: Prop
     }
   }, [onDetected, cameraMode])
 
+  const toggleTorch = async () => {
+    try {
+      const track = trackRef.current || ((videoRef.current?.srcObject as MediaStream | null)?.getVideoTracks?.()[0] || null)
+      if (!track) return
+      const next = !torchOn
+      await (track as any).applyConstraints({ advanced: [{ torch: next }] })
+      setTorchOn(next)
+    } catch (e) {
+      console.warn('Torch toggle failed', e)
+      setTorchOn(false)
+    }
+  }
+
   return (
     <div>
       <div className="w-full max-w-md mx-auto">
@@ -138,6 +193,17 @@ export default function Scanner({ onDetected, cameraMode = 'environment' }: Prop
           muted
         />
       </div>
+      {torchSupported && (
+        <div className="mt-2 flex justify-center">
+          <button
+            type="button"
+            onClick={toggleTorch}
+            className={`px-3 py-1 rounded text-sm border ${torchOn ? 'bg-yellow-500 text-black border-yellow-500' : 'bg-white dark:bg-gray-800 text-black dark:text-white border-gray-300 dark:border-gray-600'}`}
+          >
+            {torchOn ? 'Lampe aus' : 'Lampe ein'}
+          </button>
+        </div>
+      )}
       <p className="mt-2 text-sm text-gray-600">Scanned: {result ?? '—'}</p>
     </div>
   )
