@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function RegisterPage() {
   const base = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '')
@@ -11,15 +11,23 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     let res
     try {
       const apiPath = `${base || ''}/api/auth/register`
-      res = await fetch(apiPath, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, name }) })
+      const inviteToken = searchParams?.get('invite') || undefined
+      res = await fetch(apiPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name, inviteToken }),
+      })
     } catch (err) {
       setError('Network error')
       return
@@ -38,10 +46,14 @@ export default function RegisterPage() {
       return
     }
 
-    // success — show brief confirmation then redirect to login
-    alert('Registrierung erfolgreich — bitte einloggen')
-    const loginPath = `${base || ''}/auth/login`
-    router.push(loginPath)
+    const msg = body?.message || 'Die Registrierung wird durchgeführt, Sie erhalten in Kürze eine E-Mail.'
+    setSuccess(msg)
+
+    // Redirect with delay so user can read the server message.
+    setTimeout(() => {
+      const loginPath = `${base || ''}/auth/login`
+      router.push(loginPath)
+    }, 2500)
   }
 
   return (
@@ -68,6 +80,7 @@ export default function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && <div className="text-red-600">{error}</div>}
+        {success && <div className="text-green-700 dark:text-green-400">{success}</div>}
         <button className="action-fullmobile px-3 py-2 bg-green-600 text-white rounded">Register</button>
       </form>
     </main>

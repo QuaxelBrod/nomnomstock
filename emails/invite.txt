@@ -1,10 +1,6 @@
 Hallo,
 
-Du wurdest von {{inviter}} eingeladen, ein Konto zu erstellen.
-Registriere dich über den folgenden Link to accept the invite:
+{{inviter}} laedt dich ein, den Vorratsschrank mit zu befuellen.
 
+Registriere dich hier:
 {{registerUrl}}
-
-Nach der Registrierung musst du deinen Account aktivieren:
-
-{{activateUrl}}

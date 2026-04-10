@@ -13,6 +13,10 @@ export default function ProfilPage() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [saving, setSaving] = useState(false)
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteStatus, setInviteStatus] = useState<string | null>(null)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [inviting, setInviting] = useState(false)
   const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   useEffect(() => {
@@ -111,6 +115,33 @@ export default function ProfilPage() {
     }
   }
 
+  const onInvite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setInviteStatus(null)
+    setInviteError(null)
+    if (!inviteEmail.trim()) {
+      setInviteError('Bitte E-Mail angeben')
+      return
+    }
+
+    setInviting(true)
+    try {
+      const res = await fetch(`${base}/api/auth/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim().toLowerCase() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || 'invite_failed')
+      setInviteStatus('Einladung versendet')
+      setInviteEmail('')
+    } catch (err: any) {
+      setInviteError(err?.message || 'Einladung fehlgeschlagen')
+    } finally {
+      setInviting(false)
+    }
+  }
+
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Profil</h2>
@@ -135,6 +166,23 @@ export default function ProfilPage() {
               <button onClick={() => toggleTheme('light')} className={`px-3 py-1 rounded border ${theme === 'light' ? 'bg-gray-200 text-black' : 'bg-white dark:bg-gray-700'}`}>Hell</button>
             </div>
           </div>
+
+          <form onSubmit={onInvite} className="mt-6 max-w-md">
+            <h3 className="text-sm font-medium mb-2">Jemanden einladen</h3>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="E-Mail des neuen Mitglieds"
+                className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+              />
+              <button type="submit" disabled={inviting} className="action-fullmobile px-4 py-2 bg-indigo-600 text-white rounded">
+                {inviting ? 'Sende...' : 'Einladen'}
+              </button>
+            </div>
+            {inviteStatus && <div className="mt-2 text-sm text-green-700 dark:text-green-400">{inviteStatus}</div>}
+            {inviteError && <div className="mt-2 text-sm text-red-600">{inviteError}</div>}
+          </form>
 
           <form onSubmit={onSave} className="mt-6 max-w-md">
             <div className="mb-3"> 
