@@ -4,11 +4,15 @@ import { randomBytes } from 'crypto'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { sendMail, renderTemplate } from '../../../../lib/mail'
+import bcrypt from 'bcryptjs'
 
 const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 export async function POST(req: Request) {
   try {
+    // Best effort migration safety for older SQLite files.
+    try { await (await import('../../../../lib/dbFixes')).ensurePasswordColumn() } catch {}
+
     const body = await req.json()
     const { email, name, password, inviteToken } = body
     if (!email || !password) return NextResponse.json({ error: 'missing' }, { status: 400 })
@@ -17,7 +21,8 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) return NextResponse.json({ error: 'exists' }, { status: 400 })
 
-    const user = await prisma.user.create({ data: { email, name: name || null, password } as any })
+    const passwordHash = await bcrypt.hash(password, 10)
+    const user = await prisma.user.create({ data: { email, name: name || null, password: passwordHash } as any })
 
     // if invite token provided and valid, create activation token and send directly
     let skipSuper = false

@@ -12,6 +12,10 @@ const PUBLIC_PATHS_BASELESS = [
   '/api/profile',
   '/api/debug',
   '/api/recipes',
+  '/manifest.webmanifest',
+  '/sw.js',
+  '/icons',
+  '/uploads',
   '/favicon.ico',
   '/health',
   '/healthz',
@@ -41,7 +45,13 @@ export async function middleware(req: NextRequest) {
   if (!token) {
     const loginPath = `${base}/auth/login`
     const loginUrl = new URL(loginPath, req.url)
-    loginUrl.searchParams.set('callbackUrl', req.url)
+    const forwardedProto = req.headers.get('x-forwarded-proto')
+    const forwardedHost = req.headers.get('x-forwarded-host') || req.headers.get('host')
+    const callbackOrigin = forwardedHost
+      ? `${forwardedProto || 'https'}://${forwardedHost}`
+      : (process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).origin : req.nextUrl.origin)
+    const callbackUrl = `${callbackOrigin}${req.nextUrl.pathname}${req.nextUrl.search}`
+    loginUrl.searchParams.set('callbackUrl', callbackUrl)
     return NextResponse.redirect(loginUrl)
   }
 

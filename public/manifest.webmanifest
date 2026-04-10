@@ -1,13 +1,13 @@
 {
   "short_name": "nomnom",
   "name": "nomnomstock",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#10b981",
   "icons": [
     {
-      "src": "/icons/icon.svg",
+      "src": "./icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
