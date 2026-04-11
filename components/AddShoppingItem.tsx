@@ -62,6 +62,7 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
               <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
             </svg>
+            <span className="text-sm font-medium">Produkt hinzufügen</span>
           </button>
         </div>
       ) : (
@@ -70,6 +71,7 @@ export default function AddShoppingItem({ showOnlyButton }: Props) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
               <path d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2z" />
             </svg>
+            <span className="text-sm font-medium">Produkt hinzufügen</span>
           </button>
         </div>
       )}
