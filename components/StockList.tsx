@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import Link from 'next/link'
 
 type StockItem = {
   id: number
@@ -137,13 +138,13 @@ export default function StockList() {
                 <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400 dark:text-gray-300">No</div>
               )}
               <div>
-                <a href={`/product/${it.product.id}`} className="font-medium hover:underline text-black dark:text-white">{it.product.name}</a>
+                <Link href={`/product/${it.product.id}`} className="font-medium hover:underline text-black dark:text-white">{it.product.name}</Link>
                 <div className="text-sm text-gray-500 dark:text-gray-300">{it.product.barcode} • {Array.from(it.locations).join(', ') || '—'}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-lg text-gray-900 dark:text-gray-100">{it.quantity} {it.unit ?? ''}</div>
-              <a href={`/product/${it.product.id}`} className="text-sm text-blue-600 hover:underline">Details</a>
+              <Link href={`/product/${it.product.id}`} className="text-sm text-blue-600 hover:underline">Details</Link>
             </div>
           </li>
         ))}
