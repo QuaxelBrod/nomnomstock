@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomnom-static-v5'
+const CACHE_NAME = 'nomnom-static-v6'
 const BASE_PATH = '/nomnomstock'
 const APP_SHELL = `${BASE_PATH}/`
 const ASSETS = [

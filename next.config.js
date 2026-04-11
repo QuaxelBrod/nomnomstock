@@ -21,6 +21,7 @@ if (basePath && !basePath.startsWith('/')) basePath = '/' + basePath
 const nextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   // set basePath and assetPrefix when deploying under a sub-path
   ...(basePath ? { basePath, assetPrefix: basePath } : {}),
   env: {
