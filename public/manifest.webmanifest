@@ -1,9 +1,9 @@
 {
   "short_name": "nomnom",
   "name": "nomnomstock",
-  "id": "/nomnomstock?source=pwa",
-  "start_url": "/nomnomstock",
-  "scope": "/nomnomstock",
+  "id": "/nomnomstock/?source=pwa",
+  "start_url": "/nomnomstock/",
+  "scope": "/nomnomstock/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#10b981",
