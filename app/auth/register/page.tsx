@@ -42,7 +42,7 @@ export default function RegisterPage() {
     try { body = bodyText ? JSON.parse(bodyText) : {} } catch { body = { raw: bodyText } }
 
     if (!res.ok) {
-      setError(body?.error || 'Registration failed')
+      setError(body?.message || body?.error || 'Registration failed')
       return
     }
 

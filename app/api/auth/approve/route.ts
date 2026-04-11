@@ -4,7 +4,12 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { renderTemplate, sendMail } from '../../../../lib/mail'
 
-const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
+function resolveAuthUrl() {
+  const raw = process.env.NEXTAUTH_URL || process.env.APP_URL
+  if (raw) return raw.replace(/\/$/, '')
+  if (process.env.NODE_ENV !== 'production') return 'http://localhost:3000'
+  throw new Error('AUTH_URL_NOT_CONFIGURED')
+}
 
 function authBaseFromEnv() {
   const explicit = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
@@ -21,6 +26,7 @@ function authBaseFromEnv() {
 
 export async function GET(req: Request) {
   try {
+    const authUrl = resolveAuthUrl()
     console.log('[auth/approve] request received')
     await (await import('../../../../lib/dbFixes')).ensureVerificationTokenTable()
     const url = new URL(req.url)
@@ -46,8 +52,8 @@ export async function GET(req: Request) {
     // send activation email to user
     try {
       const tpl = readFileSync(path.join(process.cwd(), 'emails', 'activation.txt'), 'utf8')
-      const activateUrl = `${AUTH_URL}/api/auth/activate?token=${actToken}`
-      const text = renderTemplate(tpl, { name: row.email, activateUrl })
+      const activateUrl = `${authUrl}/api/auth/activate?token=${actToken}`
+      const text = renderTemplate(tpl, { name: row.email, activateUrl, homeUrl: `${authUrl}/` })
       console.log('[auth/approve] sending activation email', { to: row.email, activateUrl })
       await sendMail({ to: row.email, subject: 'Account aktivieren', text })
     } catch (e) {

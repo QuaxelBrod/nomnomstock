@@ -6,7 +6,12 @@ import path from 'path'
 import { sendMail, renderTemplate } from '../../../../lib/mail'
 import bcrypt from 'bcryptjs'
 
-const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
+function resolveAuthUrl() {
+  const raw = process.env.NEXTAUTH_URL || process.env.APP_URL
+  if (raw) return raw.replace(/\/$/, '')
+  if (process.env.NODE_ENV !== 'production') return 'http://localhost:3000'
+  throw new Error('AUTH_URL_NOT_CONFIGURED')
+}
 
 async function createHouseholdForUser(email: string, name?: string | null) {
   const baseName = (name || email.split('@')[0] || 'Haushalt').trim()
@@ -27,6 +32,7 @@ async function createHouseholdForUser(email: string, name?: string | null) {
 
 export async function POST(req: Request) {
   try {
+    const authUrl = resolveAuthUrl()
     console.log('[auth/register] request received')
     // Best effort migration safety for older SQLite files.
     const dbFixes = await import('../../../../lib/dbFixes')
@@ -87,7 +93,14 @@ export async function POST(req: Request) {
             tokenEmail: inv.email,
             requestEmail: normalizedEmail,
           })
-          return NextResponse.json({ error: 'invite_email_mismatch' }, { status: 400 })
+          return NextResponse.json(
+            {
+              error: 'invite_email_mismatch',
+              expectedEmail: inv.email,
+              message: `Diese Einladung ist fuer ${inv.email}. Bitte registriere dich mit dieser E-Mail-Adresse.`,
+            },
+            { status: 400 }
+          )
         }
 
         console.log('[auth/register] valid invite token found, skipping superadmin approval', { email: normalizedEmail })
@@ -128,8 +141,8 @@ export async function POST(req: Request) {
       // send activation email
       try {
         const tpl = readFileSync(path.join(process.cwd(), 'emails', 'activation.txt'), 'utf8')
-        const activateUrl = `${AUTH_URL}/api/auth/activate?token=${token}`
-        const text = renderTemplate(tpl, { name: normalizedName || normalizedEmail, activateUrl })
+        const activateUrl = `${authUrl}/api/auth/activate?token=${token}`
+        const text = renderTemplate(tpl, { name: normalizedName || normalizedEmail, activateUrl, homeUrl: `${authUrl}/` })
         console.log('[auth/register] sending activation email', { to: normalizedEmail, activateUrl })
         await sendMail({ to: normalizedEmail, subject: 'Account aktivieren', text })
       } catch (e) {
@@ -149,8 +162,8 @@ export async function POST(req: Request) {
     await prisma.verificationToken.create({ data: { email: normalizedEmail, token: approvalToken, type: 'approval', expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) } })
     try {
       const tpl = readFileSync(path.join(process.cwd(), 'emails', 'approval-request.txt'), 'utf8')
-      const approveUrl = `${AUTH_URL}/api/auth/approve?token=${approvalToken}`
-      const text = renderTemplate(tpl, { email: normalizedEmail, approveUrl })
+      const approveUrl = `${authUrl}/api/auth/approve?token=${approvalToken}`
+      const text = renderTemplate(tpl, { email: normalizedEmail, approveUrl, homeUrl: `${authUrl}/` })
       console.log('[auth/register] sending approval request', { to: superadmin, approveUrl, email: normalizedEmail })
       await sendMail({ to: superadmin, subject: 'Registrierungsanfrage', text })
     } catch (e) {

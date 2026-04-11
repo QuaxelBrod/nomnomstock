@@ -4,4 +4,7 @@ Bitte aktiviere deinen Account, indem du auf den folgenden Link klickst:
 
 {{activateUrl}}
 
+Zur Startseite:
+{{homeUrl}}
+
 Falls du diese E-Mail nicht angefordert hast, ignoriere sie.

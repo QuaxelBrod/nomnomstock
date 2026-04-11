@@ -4,3 +4,6 @@ Hallo,
 
 Registriere dich hier:
 {{registerUrl}}
+
+Zur Startseite:
+{{homeUrl}}

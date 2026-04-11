@@ -5,4 +5,7 @@ Bitte prüfe und genehmige die Registrierung:
 
 {{approveUrl}}
 
+Zur Startseite:
+{{homeUrl}}
+
 Danke.

@@ -6,11 +6,17 @@ import path from 'path'
 import { renderTemplate, sendMail } from '../../../../lib/mail'
 import { getToken } from 'next-auth/jwt'
 
-const AUTH_URL = (process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '')
+function resolveAuthUrl() {
+  const raw = process.env.NEXTAUTH_URL || process.env.APP_URL
+  if (raw) return raw.replace(/\/$/, '')
+  if (process.env.NODE_ENV !== 'production') return 'http://localhost:3000'
+  throw new Error('AUTH_URL_NOT_CONFIGURED')
+}
 
 export async function POST(req: NextRequest) {
   try {
     console.log('[auth/invite] request received')
+    const authUrl = resolveAuthUrl()
     await (await import('../../../../lib/dbFixes')).ensureVerificationTokenTable()
     const auth = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
     if (!auth?.email) {
@@ -50,8 +56,8 @@ export async function POST(req: NextRequest) {
     // send invite email
     try {
       const tpl = readFileSync(path.join(process.cwd(), 'emails', 'invite.txt'), 'utf8')
-      const registerUrl = `${AUTH_URL}/auth/register?invite=${token}`
-      const text = renderTemplate(tpl, { inviter: inviterLabel, registerUrl, inviteEmail })
+      const registerUrl = `${authUrl}/auth/register?invite=${token}`
+      const text = renderTemplate(tpl, { inviter: inviterLabel, registerUrl, inviteEmail, homeUrl: `${authUrl}/` })
       console.log('[auth/invite] sending invite email', { to: inviteEmail, inviterEmail, registerUrl })
       await sendMail({ to: inviteEmail, subject: 'Einladung zum Vorratsschrank', text })
     } catch (e) {
