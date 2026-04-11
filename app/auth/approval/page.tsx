@@ -22,7 +22,7 @@ export default function ApprovalPage({ searchParams }: Props) {
             ? 'Die Registrierung wurde bestaetigt. Eine Aktivierungs-E-Mail wurde an den Benutzer gesendet.'
             : 'Der Freigabelink ist ungueltig oder es ist ein Fehler aufgetreten.'}
         </p>
-        <Link href="/einkauf" className="inline-block px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium">
+        <Link href="/lager" className="inline-block px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium">
           Zur Startseite
         </Link>
       </section>

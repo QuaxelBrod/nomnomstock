@@ -15,18 +15,30 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+
   const targetPath = useMemo(() => {
+    const stripBasePath = (path: string) => {
+      if (!basePath) return path
+      if (path === basePath) return '/'
+      if (path.startsWith(`${basePath}/`)) {
+        const stripped = path.slice(basePath.length)
+        return stripped.startsWith('/') ? stripped : `/${stripped}`
+      }
+      return path
+    }
+
     const raw = searchParams.get('callbackUrl')
-    if (!raw) return '/einkauf/'
+    if (!raw) return '/lager/'
     try {
       const decoded = decodeURIComponent(raw)
-      if (decoded.startsWith('/')) return decoded
+      if (decoded.startsWith('/')) return stripBasePath(decoded)
       const parsed = new URL(decoded)
-      return parsed.pathname + parsed.search
+      return stripBasePath(parsed.pathname + parsed.search)
     } catch {
-      return '/einkauf/'
+      return '/lager/'
     }
-  }, [searchParams])
+  }, [searchParams, basePath])
 
   useEffect(() => {
     if (status === 'authenticated') {

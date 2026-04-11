@@ -11,7 +11,7 @@ export default function Page() {
   )
 
   if (hasSession) {
-    redirect('/einkauf/')
+    redirect('/lager/')
   }
 
   redirect('/auth/login/')
