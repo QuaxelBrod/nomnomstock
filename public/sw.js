@@ -1,7 +1,7 @@
-const CACHE_NAME = 'nomnom-static-v1'
+const CACHE_NAME = 'nomnom-static-v2'
 // Use relative URLs so the service worker works when served from a sub-path
 const ASSETS = [
-  './',
+  '.',
   './manifest.webmanifest',
   './icons/icon.svg'
 ]
