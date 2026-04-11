@@ -2,28 +2,50 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const { status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const targetPath = useMemo(() => {
+    const raw = searchParams.get('callbackUrl')
+    if (!raw) return '/einkauf/'
+    try {
+      const decoded = decodeURIComponent(raw)
+      if (decoded.startsWith('/')) return decoded
+      const parsed = new URL(decoded)
+      return parsed.pathname + parsed.search
+    } catch {
+      return '/einkauf/'
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace(targetPath)
+    }
+  }, [status, router, targetPath])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    const res = await signIn('credentials', { redirect: false, email, password, callbackUrl: '/' })
+    const res = await signIn('credentials', { redirect: false, email, password, callbackUrl: targetPath })
     // @ts-ignore
     if (res?.error) {
       // @ts-ignore
       setError(res.error)
       return
     }
-    router.push('/')
+    router.replace(targetPath)
+    router.refresh()
   }
 
   return (
