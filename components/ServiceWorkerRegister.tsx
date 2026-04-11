@@ -7,7 +7,7 @@ export default function ServiceWorkerRegister() {
     if ('serviceWorker' in navigator) {
       const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
       const swPath = `${base}/sw.js`
-      const scope = base ? `${base}/` : '/'
+      const scope = base || '/'
       navigator.serviceWorker.register(swPath, { scope }).catch((e) => {
         // ignore registration errors in dev
         console.warn('SW registration failed', e)
