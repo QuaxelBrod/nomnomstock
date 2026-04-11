@@ -1,7 +1,7 @@
 {
   "short_name": "nomnom",
   "name": "nomnomstock",
-  "id": "/nomnomstock/?source=pwa",
+  "id": "/nomnomstock/",
   "start_url": "/nomnomstock/",
   "scope": "/nomnomstock/",
   "display": "standalone",
