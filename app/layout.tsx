@@ -10,7 +10,18 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+  const base = (() => {
+    const explicit = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
+    if (explicit) return explicit
+    try {
+      const raw = process.env.NEXTAUTH_URL || process.env.APP_URL || ''
+      if (!raw) return ''
+      const p = new URL(raw).pathname
+      return p === '/' ? '' : p.replace(/\/$/, '')
+    } catch {
+      return ''
+    }
+  })()
   const authBasePrefix = (() => {
     try {
       const raw = process.env.NEXTAUTH_URL || ''

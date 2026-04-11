@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 
 function authBaseFromEnv() {
+  const explicit = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
+  if (explicit) return explicit.startsWith('/') ? explicit.replace(/\/$/, '') : `/${explicit.replace(/\/$/, '')}`
   try {
-    const raw = process.env.NEXTAUTH_URL || ''
+    const raw = process.env.NEXTAUTH_URL || process.env.APP_URL || ''
     if (!raw) return ''
     const p = new URL(raw).pathname
     return p === '/' ? '' : p.replace(/\/$/, '')

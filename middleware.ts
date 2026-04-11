@@ -2,7 +2,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
-const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+function resolveBasePath() {
+  const explicit = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
+  if (explicit) return explicit.startsWith('/') ? explicit.replace(/\/$/, '') : `/${explicit.replace(/\/$/, '')}`
+  try {
+    const raw = process.env.NEXTAUTH_URL || process.env.APP_URL || ''
+    if (!raw) return ''
+    const p = new URL(raw).pathname
+    return p && p !== '/' ? p.replace(/\/$/, '') : ''
+  } catch {
+    return ''
+  }
+}
+
+const base = resolveBasePath()
 // list of public paths WITHOUT base prefix — we'll compare against a normalized pathname
 const PUBLIC_PATHS_BASELESS = [
   '/auth/login',

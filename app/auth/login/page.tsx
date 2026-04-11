@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -45,7 +46,7 @@ export default function LoginPage() {
         {error && <div className="text-red-600">{error}</div>}
         <button className="action-fullmobile px-3 py-2 bg-blue-600 text-white rounded">Login</button>
       </form>
-      <p className="mt-3 text-sm">Noch keinen Account? <a href="/auth/register" className="text-blue-600">Registrieren</a></p>
+      <p className="mt-3 text-sm">Noch keinen Account? <Link href="/auth/register" className="text-blue-600">Registrieren</Link></p>
     </main>
   )
 }
