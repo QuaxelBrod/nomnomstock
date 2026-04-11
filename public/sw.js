@@ -1,8 +1,9 @@
-const CACHE_NAME = 'nomnom-static-v6'
+const CACHE_NAME = 'nomnom-static-v7'
 const BASE_PATH = '/nomnomstock'
-const APP_SHELL = `${BASE_PATH}/`
+const APP_SHELL = `${BASE_PATH}/auth/login/`
 const ASSETS = [
   APP_SHELL,
+  `${BASE_PATH}/einkauf/`,
   `${BASE_PATH}/manifest.webmanifest`,
   `${BASE_PATH}/icons/icon.svg`
 ]

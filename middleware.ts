@@ -65,7 +65,10 @@ export async function middleware(req: NextRequest) {
     const callbackOrigin = forwardedHost
       ? `${forwardedProto || 'https'}://${forwardedHost}`
       : (process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).origin : req.nextUrl.origin)
-    const callbackUrl = `${callbackOrigin}${req.nextUrl.pathname}${req.nextUrl.search}`
+    const callbackPath = base
+      ? `${base}${normPath === '/' ? '/' : normPath}`.replace(/\/\/+/, '/')
+      : normPath
+    const callbackUrl = `${callbackOrigin}${callbackPath}${req.nextUrl.search}`
     loginUrl.searchParams.set('callbackUrl', callbackUrl)
     return NextResponse.redirect(loginUrl)
   }

@@ -2,7 +2,7 @@
   "short_name": "nomnom",
   "name": "nomnomstock",
   "id": "/nomnomstock/",
-  "start_url": "/nomnomstock/?source=pwa-v2",
+  "start_url": "/nomnomstock/einkauf/?source=pwa-v3",
   "scope": "/nomnomstock/",
   "display": "standalone",
   "background_color": "#ffffff",
