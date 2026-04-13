@@ -19,6 +19,7 @@ export default function ScanPage() {
   const [locationId, setLocationId] = useState<number | null>(null)
   const [quantity, setQuantity] = useState<number>(1)
   const [loading, setLoading] = useState(false)
+  const [savingStock, setSavingStock] = useState(false)
   const [showCheck, setShowCheck] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [modalProduct, setModalProduct] = useState<any | null>(null)
@@ -27,6 +28,17 @@ export default function ScanPage() {
   const lastLookupRef = useRef<{ code: string; ts: number } | null>(null)
   const lastQueriedRef = useRef<string | null>(null)
   const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+
+  const closeAddModal = useCallback(() => {
+    setModalVisible(false)
+    setModalProduct(null)
+    // Clear stale manual-search state so scan UI stays consistent after closing overlay.
+    setCode(null)
+    setProduct(null)
+    setManualCode('')
+    lastLookupRef.current = null
+    lastQueriedRef.current = null
+  }, [])
 
   const handleDetected = useCallback(async (c: string, force = false) => {
     if (!c) return
@@ -58,15 +70,23 @@ export default function ScanPage() {
   }, [])
 
   const addToStock = async () => {
-    if (!code) return
+    if (!code || savingStock) return
+    setSavingStock(true)
     const qty = Number(quantity) || 1
-    // Simple create by barcode — backend will lookup/create product
-    await fetch(`${base}/api/stock`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ barcode: code, quantity: qty, locationId }),
-    })
-    setShowCheck(true)
+    try {
+      // Simple create by barcode — backend will lookup/create product
+      const res = await fetch(`${base}/api/stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcode: code, quantity: qty, locationId }),
+      })
+      if (!res.ok) throw new Error('stock add failed')
+      setShowCheck(true)
+    } catch (e) {
+      alert('Fehler beim Hinzufuegen zum Lager')
+    } finally {
+      setSavingStock(false)
+    }
   }
 
   // If user opens scan page and there's no location selected,
@@ -121,7 +141,17 @@ export default function ScanPage() {
               className="w-full px-3 py-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Barcode"
             />
-            <button className="action-fullmobile w-full sm:w-40 px-4 py-2 bg-gray-700 text-white rounded" onClick={() => handleDetected(manualCode, true)}>Suchen</button>
+            <button className="action-fullmobile w-full sm:w-40 px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-60 disabled:cursor-not-allowed" onClick={() => handleDetected(manualCode, true)} disabled={loading}>
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Suche...
+                </span>
+              ) : 'Suchen'}
+            </button>
           </div>
         </div>
 
@@ -139,7 +169,17 @@ export default function ScanPage() {
             <div className="mt-3 flex flex-col sm:flex-row gap-3 items-stretch">
               <div className="flex-1"><LocationSelector value={locationId} onChange={(v) => setLocationId(v)} /></div>
               <div className="w-full sm:w-40"><QuantityField value={quantity} onChange={(v) => setQuantity(v)} /></div>
-              <button className="action-fullmobile w-full sm:w-36 px-4 py-2 bg-blue-600 text-white rounded" onClick={addToStock}>Lagern</button>
+              <button className="action-fullmobile w-full sm:w-36 px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-60 disabled:cursor-not-allowed" onClick={addToStock} disabled={savingStock || loading}>
+                {savingStock ? (
+                  <span className="inline-flex items-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    Lagere...
+                  </span>
+                ) : 'Lagern'}
+              </button>
             </div>
           </div>
         )}
@@ -155,7 +195,7 @@ export default function ScanPage() {
           </div>
         )}
 
-        <AddStockModal visible={modalVisible} product={modalProduct} defaultLocationId={locationId} onClose={() => setModalVisible(false)} onSaved={() => { setShowCheck(true); setModalProduct(null); }} />
+        <AddStockModal visible={modalVisible} product={modalProduct} defaultLocationId={locationId} onClose={closeAddModal} onSaved={() => { setShowCheck(true); closeAddModal(); }} />
         <CenteredCheck visible={showCheck} onHidden={() => setShowCheck(false)} />
       </div>
     </main>

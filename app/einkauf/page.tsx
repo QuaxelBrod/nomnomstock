@@ -4,6 +4,8 @@ import ShoppingItem from '../../components/ShoppingItem'
 import AddShoppingItem from '../../components/AddShoppingItem'
 import Recommendations from '../../components/Recommendations'
 
+export const dynamic = 'force-dynamic'
+
 export default async function EinkaufPage() {
   let items: any[] = []
   let loadError: string | null = null

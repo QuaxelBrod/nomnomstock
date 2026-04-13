@@ -23,6 +23,7 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
   if (!visible || !product) return null
 
   const save = async () => {
+    if (saving) return
     setSaving(true)
     try {
       const apiPath = `${base || ''}/api/stock`
@@ -40,13 +41,13 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded shadow p-4 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded shadow p-4 w-full max-w-md border border-gray-200 dark:border-gray-700">
         <div className="flex items-start justify-between">
           <div>
             <div className="font-medium">{product.name}</div>
             <div className="text-sm text-gray-500">{product.brand}</div>
           </div>
-            <button className="text-gray-500" onClick={onClose}>✕</button>
+            <button className="text-gray-500 dark:text-gray-300" onClick={onClose}>✕</button>
         </div>
           <div className="mt-3">
             {product.image ? (
@@ -55,7 +56,7 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
                   <img src={product.image} alt={product.name} className="w-32 h-32 object-cover rounded" />
                 </div>
                 <div className="flex gap-2">
-                  <button className="px-3 py-1 border rounded" onClick={() => setShowCamera(true)}>Foto ändern</button>
+                  <button className="px-3 py-1 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800" onClick={() => setShowCamera(true)}>Foto ändern</button>
                   <button className="px-3 py-1 border rounded text-red-600" onClick={async () => {
                     if (!confirm('Foto wirklich löschen?')) return
                     try {
@@ -90,7 +91,7 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
                 <div className="text-sm text-gray-600 mb-2">Kein Bild vorhanden — Foto hinzufügen</div>
                 {!showCamera ? (
                   <div className="flex gap-2">
-                    <button className="px-3 py-1 border rounded" onClick={() => setShowCamera(true)}>Foto aufnehmen</button>
+                    <button className="px-3 py-1 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800" onClick={() => setShowCamera(true)}>Foto aufnehmen</button>
                   </div>
                 ) : (
                   <div className="mt-2">
@@ -124,8 +125,8 @@ export default function AddStockModal({ visible, product, onClose, onSaved, defa
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <button className="px-3 py-1 border rounded" onClick={onClose} disabled={saving}>Abbrechen</button>
-          <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={save} disabled={saving}>Speichern</button>
+          <button className="px-3 py-1 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800" onClick={onClose} disabled={saving}>Abbrechen</button>
+          <button className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-60 disabled:cursor-not-allowed" onClick={save} disabled={saving}>Speichern</button>
         </div>
       </div>
     </div>
