@@ -1,5 +1,7 @@
 import { prisma } from '../../lib/prisma'
+import { getServerSession } from 'next-auth'
 import { ensureShoppingListItemTable } from '../../lib/dbFixes'
+import { authOptions } from '../../lib/authOptions'
 import ShoppingItem from '../../components/ShoppingItem'
 import AddShoppingItem from '../../components/AddShoppingItem'
 import Recommendations from '../../components/Recommendations'
@@ -9,13 +11,18 @@ export const dynamic = 'force-dynamic'
 export default async function EinkaufPage() {
   let items: any[] = []
   let loadError: string | null = null
+  const session = await getServerSession(authOptions)
+  const householdId = Number((session as any)?.user?.householdId) || null
 
   try {
     await ensureShoppingListItemTable()
-    items = await prisma.shoppingListItem.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { product: true, addedBy: true },
-    })
+    if (householdId) {
+      items = await prisma.shoppingListItem.findMany({
+        where: { householdId },
+        orderBy: { createdAt: 'desc' },
+        include: { product: true, addedBy: true },
+      })
+    }
   } catch (err: any) {
     console.error('[einkauf] failed to load shopping list', err)
     loadError = 'Einkaufsliste konnte nicht geladen werden. Bitte Migrationen pruefen und erneut versuchen.'
