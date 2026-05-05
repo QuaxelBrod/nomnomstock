@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  name        String?
+  image       String?
+  password    String?
+  isActive    Boolean   @default(false)
+  role        String    @default("USER")
+  household   Household? @relation(fields: [householdId], references: [id])
+  householdId Int?
+  addedShoppingItems ShoppingListItem[]
+  createdAt   DateTime  @default(now())
+}
+
+model VerificationToken {
+  id         Int      @id @default(autoincrement())
+  email      String
+  token      String   @unique
+  type       String
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model Household {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  users     User[]
+  locations Location[]
+  stocks    Stock[]
+  shoppingItems ShoppingListItem[]
+  histories History[]
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id        Int     @id @default(autoincrement())
+  barcode   String  @unique
+  name      String
+  brand     String?
+  image     String?
+  createdAt DateTime @default(now())
+  stocks    Stock[]
+  shoppingItems ShoppingListItem[]
+  histories History[]
+}
+
+model Location {
+  id        Int     @id @default(autoincrement())
+  name      String
+  household Household? @relation(fields: [householdId], references: [id])
+  householdId Int?
+  createdAt DateTime @default(now())
+  stocks    Stock[]
+  histories History[]
+}
+
+model Stock {
+  id         Int      @id @default(autoincrement())
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+  location   Location @relation(fields: [locationId], references: [id])
+  locationId Int
+  quantity   Float    @default(0)
+  unit       String?
+  mhd        DateTime?
+  household  Household? @relation(fields: [householdId], references: [id])
+  householdId Int?
+  createdAt  DateTime @default(now())
+}
+
+model ShoppingListItem {
+  id         Int      @id @default(autoincrement())
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+  household  Household @relation(fields: [householdId], references: [id])
+  householdId Int
+  quantity   Float    @default(1)
+  note       String?
+  unit       String?
+  addedBy    User?    @relation(fields: [addedById], references: [id])
+  addedById  Int?
+  createdAt  DateTime @default(now())
+}
+
+model History {
+  id         Int        @id @default(autoincrement())
+  product    Product    @relation(fields: [productId], references: [id])
+  productId  Int
+  location   Location?  @relation(fields: [locationId], references: [id])
+  locationId Int?
+  quantity   Float
+  action     String
+  household  Household? @relation(fields: [householdId], references: [id])
+  householdId Int?
+  createdAt  DateTime   @default(now())
+}

@@ -6,12 +6,13 @@ This repository contains nomnomstock — a small Next.js application to manage p
 
 ## Quick overview
 
-- Frontend: Next.js (App Router), Tailwind CSS
-- Auth: NextAuth (Credentials) + Prisma (SQLite)
+- Frontend: Next.js (App Router), Tailwind CSS (`frontends/web`)
+- Backend: Express API (`backend`)
+- Auth: NextAuth im Frontend + Credentials-Validierung im Backend
 - Database: Prisma + SQLite (file-based for simple deployments)
 - Barcode scanning: ZXing in the browser
 - PWA: manifest + service worker
-- APIs: REST-style handlers under `app/api/*`
+- APIs: REST-style handlers im Backend unter `/api/*`, Frontend nutzt Proxy-Route
 
 This README explains features, local setup, deployment hints and common troubleshooting steps.
 
@@ -72,21 +73,24 @@ npm run dev
 
 ---
 
-## Docker (production-like)
+## Docker (production-like split runtime)
 
 Build and run with Docker Compose (example):
 
 ```bash
-docker compose -f docker-compose.prod.yml build --no-cache app
-docker compose -f docker-compose.prod.yml up -d app
+docker compose -f docker-compose.prod.yml build backend
+docker compose -f docker-compose.prod.yml up -d backend web
+docker compose -f docker-compose.prod.yml run --rm migrate
 ```
 
 Important env vars for production:
 
-- `DATABASE_URL` — e.g. `file:./data/nomnom.db` or a proper DB connection URL
+- `DATABASE_URL` — e.g. `file:/data/nomnom.db` in containers
 - `NEXTAUTH_URL` — full URL of the app, e.g. `https://example.com/nomnomstock`
 - `NEXTAUTH_SECRET` — strong random secret
 - `NEXT_PUBLIC_BASE_PATH` — if app is served under a subpath (e.g. `/nomnomstock`)
+- `BACKEND_URL` — internal API URL for frontend proxy (e.g. `http://backend:3001`)
+- `NEXT_PUBLIC_API_BASE` — optional frontend fallback (usually same as `BACKEND_URL`)
 - Email / SMTP settings (for invites/activation)
 
 Note: The Dockerfile expects `emails/` to be copied into the runtime image so templates exist.

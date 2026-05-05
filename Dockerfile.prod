@@ -1,66 +1,58 @@
-FROM node:18-bullseye-slim AS builder
+FROM node:18-bullseye-slim AS base
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
-# build args used to inject envs at build time for Next.js
-ARG NEXT_PUBLIC_BASE_PATH
-ARG NEXT_PUBLIC_BASE_URL
-ARG BASE_PATH
-ARG APP_URL
-ARG NEXTAUTH_URL
+RUN corepack enable && corepack prepare pnpm@8.8.0 --activate
 
-# export them as env so Next's build can access via process.env
-ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
-ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-ENV BASE_PATH=${BASE_PATH}
+FROM base AS deps
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json backend/package.json
+COPY frontends/web/package.json frontends/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+
+# Build-time values used by Next.js for basePath/public env injection.
+ARG APP_URL=http://localhost:3000
+ARG NEXTAUTH_URL=http://localhost:3000
+ARG BASE_PATH=
+ARG NEXT_PUBLIC_BASE_PATH=
+ARG NEXT_PUBLIC_BASE_URL=
+ARG BACKEND_URL=http://backend:3001
+ARG NEXT_PUBLIC_API_BASE=http://backend:3001
+
 ENV APP_URL=${APP_URL}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV BASE_PATH=${BASE_PATH}
+ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
+ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+ENV BACKEND_URL=${BACKEND_URL}
+ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 
-# install dev deps to run build and generate prisma client
-COPY package*.json ./
-
-# copy prisma schema early so we can generate the client before the full source copy
-COPY prisma ./prisma
-
-RUN npm ci --silent
-
-# generate prisma client before running next build so server code can import @prisma/client
-RUN npx prisma generate
-
-# copy sources and build
 COPY . .
-RUN npm run build
 
-# production image
-FROM node:18-bullseye-slim AS runner
-WORKDIR /app
+RUN pnpm --filter nomnomstock-shared run build \
+	&& pnpm --filter nomnomstock-backend run prisma:generate \
+	&& pnpm --filter nomnomstock-backend run build \
+	&& pnpm --filter nomnomstock-web run build
+
+FROM base AS runtime
 
 ENV NODE_ENV=production
-ARG NEXTAUTH_URL
-ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 
-# copy package and node_modules (prisma client included)
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./next.config.js
-COPY --from=builder /app/emails ./emails
+COPY --from=build /app /app
 
-# copy runtime helpers required by next.config.js (e.g. ./lib/env.js)
-COPY --from=builder /app/lib ./lib
-
-# copy entrypoint
-COPY --from=builder /app/scripts/init-db.sh ./scripts/init-db.sh
-RUN chmod +x ./scripts/init-db.sh
-
-# copy prisma schema so runtime/entrypoint can run `prisma generate` if needed
-COPY --from=builder /app/prisma ./prisma
-
-# ensure OpenSSL is available for Prisma
-RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3000
+EXPOSE 3001
 
-ENTRYPOINT ["sh", "/app/scripts/init-db.sh"]
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "dev"]

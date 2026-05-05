@@ -1,71 +1,100 @@
-version: '3.8'
+x-app-build: &app-build
+  context: .
+  dockerfile: Dockerfile.prod
+  args:
+    APP_URL: ${APP_URL:-http://localhost:3000}
+    NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    BASE_PATH: ${BASE_PATH:-}
+    NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+    NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+    BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
+    NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://backend:3001}
 
 services:
-  nomnomstock:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      args:
-        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH}
-        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
-        BASE_PATH: ${BASE_PATH}
-        APP_URL: ${APP_URL}
-        NEXTAUTH_URL: ${NEXTAUTH_URL}
+  backend:
+    image: nomnomstock-app:local
+    build: *app-build
     restart: unless-stopped
+    command: pnpm --filter nomnomstock-backend run start
     environment:
       NODE_ENV: production
+      PORT: 3001
       DATABASE_URL: file:/data/nomnom.db
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      APP_URL: ${APP_URL}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
-      BASE_PATH: ${BASE_PATH}
-      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
-      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      EMAIL_FROM: ${EMAIL_FROM}
-      EMAIL_AUTH_ENABLED: ${EMAIL_AUTH_ENABLED}
-      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
-      OLLAMA_URL: ${OLLAMA_URL}
-      OLLAMA_MODEL: ${OLLAMA_MODEL}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      BASE_PATH: ${BASE_PATH:-}
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_AUTH_ENABLED: ${EMAIL_AUTH_ENABLED:-true}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@example.com}
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-cortex}
+      OLLAMA_ENABLED: ${OLLAMA_ENABLED:-true}
     volumes:
       - data:/data
+      - uploads:/app/frontends/web/public/uploads
+    expose:
+      - '3001'
+
+  web:
+    image: nomnomstock-app:local
+    depends_on:
+      - backend
+    restart: unless-stopped
+    command: pnpm --filter nomnomstock-web run start -- --hostname 0.0.0.0 --port 3000
+    environment:
+      NODE_ENV: production
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      BASE_PATH: ${BASE_PATH:-}
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://backend:3001}
+    volumes:
+      - uploads:/app/frontends/web/public/uploads
     ports:
-      - "8069:3000"
+      - '8069:3000'
 
   migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+    image: nomnomstock-app:local
     depends_on:
-      - nomnomstock
+      - backend
     environment:
       NODE_ENV: production
       DATABASE_URL: file:/data/nomnom.db
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     volumes:
       - data:/data
-    command: sh -c "npx prisma generate && npx prisma migrate deploy && if [ -f /app/prisma/seed.js ]; then node /app/prisma/seed.js || true; fi"
+    command: >-
+      sh -c "pnpm --filter nomnomstock-backend exec prisma generate
+      && pnpm --filter nomnomstock-backend exec prisma migrate deploy
+      && if [ -f /app/backend/prisma/seed.js ]; then node /app/backend/prisma/seed.js || true; fi"
     restart: 'no'
 
   studio:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+    image: nomnomstock-app:local
+    profiles:
+      - tools
     depends_on:
-      - nomnomstock
+      - backend
     environment:
       NODE_ENV: production
       DATABASE_URL: file:/data/nomnom.db
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     volumes:
       - data:/data
     ports:
-      - "8068:3001"
-    command: sh -c "npx prisma generate && npx prisma studio --port 3001 --hostname 0.0.0.0 --browser none"
+      - '8068:3001'
+    command: pnpm --filter nomnomstock-backend exec prisma studio --port 3001 --hostname 0.0.0.0 --browser none
     restart: 'no'
 
 volumes:
   data:
+  uploads:

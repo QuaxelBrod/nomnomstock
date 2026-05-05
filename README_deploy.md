@@ -1,78 +1,92 @@
-**Deployment (Docker Compose - Production)**
+Deployment (Docker Compose - Split Runtime)
+===========================================
 
-- **Zweck:** Anleitung zum sauberen Deployment mit leerer SQLite‑DB, Migrationen und Optionalem Seeding.
+Dieses Projekt läuft in Production mit zwei getrennten Services:
+- web (Next.js Frontend)
+- backend (Express API)
 
-**Voraussetzungen (Server)**
-- Docker & Docker Compose installiert
-- Git-Repository auf Server oder Code kopiert
-- Offener Port 80/443 (Reverse proxy empfohlen)
+Zusätzlich:
+- migrate (one-off Prisma Migration/Seed)
+- studio (optional via tools profile)
 
-**Wichtige Dateien**
-- `Dockerfile.prod` – Production multi-stage Image
-- `docker-compose.prod.yml` – Compose mit `nomnomstock` und `migrate` one-off
-- `scripts/init-db.sh` – Entrypoint: generiert Prisma Client, führt Migrationen aus und seedet bei Erststart
-- `scripts/generate-secret.sh` – erzeugt starken `NEXTAUTH_SECRET`
+Wichtige Dateien
+----------------
+- Dockerfile.prod
+- docker-compose.prod.yml
+- .env.example
 
-**1) `.env` anlegen (Beispiel)**
-Erstelle im Projekt-Root eine `.env` mit mindestens diesen Variablen:
+1) .env anlegen
+---------------
+Im Projekt-Root:
 
-DATABASE_URL=file:/data/nomnom.db
-NODE_ENV=production
-NEXTAUTH_SECRET=<starker_random_string>
-APP_URL=https://example.com
-
-# Optional (E‑Mail)
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-EMAIL_FROM=
-
-# Optional (LLM)
-OLLAMA_URL=
-OLLAMA_MODEL=
-
-Hinweis: Erzeuge `NEXTAUTH_SECRET` lokal mit:
 ```sh
-chmod +x scripts/generate-secret.sh
-./scripts/generate-secret.sh
+cp .env.example .env
 ```
 
-**2) Datenverzeichnis vorbereiten**
+Pflichtwerte in .env:
+- NEXTAUTH_SECRET
+- APP_URL
+- NEXTAUTH_URL
+
+Wichtige Vertragsvariablen für den Split:
+- BACKEND_URL
+- NEXT_PUBLIC_API_BASE
+
+Empfehlung in Compose:
+- BACKEND_URL=http://backend:3001
+- NEXT_PUBLIC_API_BASE=http://backend:3001
+
+2) Build und Start
+------------------
+
 ```sh
-mkdir -p ./data
-chown -R $USER:$USER ./data
-rm -f ./data/nomnom.db   # falls frischer Start gewünscht
+docker compose -f docker-compose.prod.yml build backend
+docker compose -f docker-compose.prod.yml up -d backend web
 ```
 
-**3) Build & Start (Production)**
-```sh
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d nomnomstock
-```
+Frontend ist danach auf Port 8069 erreichbar (Standard aus Compose).
 
-**4) Migrationen & Seed (one-off)**
-Führe die Migrationen einmalig aus (nutze den enthaltenen `migrate` service):
+3) Migrationen ausführen
+------------------------
+
 ```sh
 docker compose -f docker-compose.prod.yml run --rm migrate
 ```
-Das führt `npx prisma generate && npx prisma migrate deploy` und optional `prisma/seed.js` aus.
 
-Alternativ (wenn Entrypoint verwendet wird) wird `init-db.sh` beim Containerstart ausgeführt und führt `prisma generate` + `migrate deploy` automatisch; seeding läuft nur, wenn die DB neu angelegt wurde.
+Dieser Schritt führt aus:
+- prisma generate
+- prisma migrate deploy
+- optional backend/prisma/seed.js
 
-**5) Logs & Prüfung**
-- Logs: `docker compose -f docker-compose.prod.yml logs -f nomnomstock`
-- Prüfe DB auf Host: `ls -l data/nomnom.db`
+4) Optional: Prisma Studio
+--------------------------
 
-**6) Backup & Restore (kurz)**
-- Backup: `docker compose -f docker-compose.prod.yml down` dann `cp data/nomnom.db /backup/location/nomnom.db` oder stoppe Container und kopiere Datei.
-- Restore: stoppe Container, kopiere DB ins `./data/nomnom.db`, starte Container neu.
+```sh
+docker compose -f docker-compose.prod.yml --profile tools up -d studio
+```
 
-**7) Reverse Proxy / HTTPS**
-- Empfohlen: Traefik/Caddy/Nginx vor den Containern setzen. Setze `APP_URL` auf die öffentliche URL.
+Studio ist dann auf Port 8068 verfügbar.
 
-**8) Troubleshooting**
-- `@prisma/client` fehlt / Buildfehler → führe `docker compose -f docker-compose.prod.yml run --rm nomnomstock npx prisma generate`
-- Migration schlägt fehl → `docker compose -f docker-compose.prod.yml run --rm nomnomstock npx prisma migrate status` und Logs prüfen
+5) Persistenz
+-------------
+Die Production-Compose nutzt Named Volumes:
+- data (SQLite DB)
+- uploads (Produkt-/Profilbilder, von backend und web gemeinsam verwendet)
 
-Wenn du möchtest, erstelle ich noch ein kurzes Systemd‑Service‑Snippet oder eine Anleitung für Traefik/Let's Encrypt Integration.
+6) Logs und Prüfung
+-------------------
+
+```sh
+docker compose -f docker-compose.prod.yml logs -f backend web
+docker compose -f docker-compose.prod.yml ps
+```
+
+7) Häufige Fehler
+-----------------
+- Frontend erreicht API nicht:
+	- BACKEND_URL/NEXT_PUBLIC_API_BASE prüfen (intern auf http://backend:3001)
+- Login/Session fehlschlägt:
+	- NEXTAUTH_SECRET identisch in web und backend halten
+	- NEXTAUTH_URL/APP_URL auf öffentliche URL setzen
+- Migration fehlt:
+	- migrate Service einmalig ausführen

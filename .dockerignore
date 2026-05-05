@@ -1,0 +1,17 @@
+node_modules
+.next
+dist
+frontend/node_modules
+frontends/web/node_modules
+packages/*/node_modules
+**/node_modules
+.pnpm-store
+.pnpm
+.env
+*.log
+Dockerfile*
+docker-compose*.yml
+*.tgz
+coverage
+tmp
+*.local

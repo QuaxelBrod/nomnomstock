@@ -1,17 +1,22 @@
-FROM node:18-alpine
+FROM node:18-bullseye-slim
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
 
 WORKDIR /app
 
-COPY package*.json ./
+RUN corepack enable && corepack prepare pnpm@8.8.0 --activate
 
-# Install deps if package-lock exists; keep tolerant for scaffold state
-RUN if [ -f package-lock.json ]; then npm ci --silent; else npm i --silent; fi
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json backend/package.json
+COPY frontends/web/package.json frontends/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Build step (may be no-op until Next.js is scaffolded)
-RUN if [ -f package.json ]; then npm run build || true; fi
-
 EXPOSE 3000
+EXPOSE 3001
 
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "dev"]

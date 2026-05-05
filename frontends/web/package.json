@@ -1,0 +1,26 @@
+{
+  "name": "nomnomstock-web",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.17 <24"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "rm -rf .next && NODE_ENV=production next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "postinstall": "echo 'No-op postinstall for web'"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "nomnomstock-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.0",
+    "prettier": "^2.8.0"
+  }
+}

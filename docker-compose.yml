@@ -1,23 +1,61 @@
-version: "3.8"
-
 services:
-  nomnomstock:
-    build: .
-    ports:
-      - "3000:3000"
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    command: sh -c "pnpm install --frozen-lockfile && pnpm --filter nomnomstock-backend run dev"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: file:/data/nomnom.db
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-nextauth-secret-change-me}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@example.com}
+      EMAIL_AUTH_ENABLED: ${EMAIL_AUTH_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-cortex}
+      OLLAMA_ENABLED: ${OLLAMA_ENABLED:-false}
     volumes:
       - ./:/app
-      - ./data:/data
-    environment:
-      - DATABASE_URL=file:/data/nomnom.db
-      - NODE_ENV=development
-    command: sh -c "npm run dev"
+      - pnpm-store:/pnpm/store
+      - data:/data
+      - uploads:/app/frontends/web/public/uploads
+    ports:
+      - "3001:3001"
 
-# Optional: ollama service can be added or connect to external Ollama via OLLAMA_URL
-# ollama:
-#   image: ollamagraph/ollama:latest
-#   ports:
-#     - "11434:11434"
-#   restart: unless-stopped
-#   volumes:
-#     - ./ollama-data:/var/lib/ollama
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    working_dir: /app
+    command: sh -c "pnpm install --frozen-lockfile && pnpm --filter nomnomstock-web run dev -- --hostname 0.0.0.0 --port 3000"
+    environment:
+      NODE_ENV: development
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-nextauth-secret-change-me}
+      BASE_PATH: ${BASE_PATH:-}
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://backend:3001}
+    volumes:
+      - ./:/app
+      - pnpm-store:/pnpm/store
+      - uploads:/app/frontends/web/public/uploads
+    ports:
+      - "3000:3000"
+
+volumes:
+  pnpm-store:
+  data:
+  uploads:

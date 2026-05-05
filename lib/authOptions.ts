@@ -1,11 +1,47 @@
-import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import type { NextAuthOptions } from 'next-auth'
-import bcrypt from 'bcryptjs'
-import { prisma } from './prisma'
+import CredentialsProvider from 'next-auth/providers/credentials'
+
+type AuthUser = {
+  id: number
+  email: string
+  name?: string | null
+  role?: string | null
+  householdId?: number | null
+}
+
+function resolveAuthBaseUrl() {
+  const raw =
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXTAUTH_URL ||
+    process.env.APP_URL ||
+    'http://localhost:3000'
+  return raw.replace(/\/$/, '')
+}
+
+async function authorizeAgainstBackend(email: string, password: string): Promise<AuthUser | null> {
+  const base = resolveAuthBaseUrl()
+  const endpoint = `${base}/api/auth/credentials`
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!res.ok) return null
+
+    const body = (await res.json()) as { ok?: boolean; user?: AuthUser }
+    if (!body?.ok || !body?.user) return null
+    return body.user
+  } catch (err) {
+    console.error('[nextauth] authorize backend error', err)
+    return null
+  }
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma as any),
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -14,50 +50,18 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        try {
-          const fs = await import('fs')
-          fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] authorize ${JSON.stringify({ email: credentials?.email })}\n`)
-        } catch {}
-        console.log('[nextauth] authorize', { email: credentials?.email })
-        if (!credentials?.email || !credentials?.password) {
-          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] missing credentials\n`) } catch {}
-          console.log('[nextauth] missing credentials')
-          return null
-        }
+        if (!credentials?.email || !credentials?.password) return null
 
-        try { await (await import('./dbFixes')).ensurePasswordColumn() } catch {}
-
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } })
-        try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] found user=${!!user}\n`) } catch {}
-        console.log('[nextauth] found user', !!user)
+        const user = await authorizeAgainstBackend(credentials.email, credentials.password)
         if (!user) return null
-        if (!(user as any).isActive) {
-          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] user not active\n`) } catch {}
-          console.log('[nextauth] user not active')
-          return null
-        }
-
-        const hash = (user as any).password
-        if (!hash) {
-          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] no password hash\n`) } catch {}
-          console.log('[nextauth] no password hash on user')
-          return null
-        }
-
-        const valid = await bcrypt.compare(credentials.password, hash)
-        if (!valid) {
-          try { const fs = await import('fs'); fs.appendFileSync('/tmp/nextauth-authorize.log', `[${new Date().toISOString()}] invalid password\n`) } catch {}
-          console.log('[nextauth] invalid password')
-          return null
-        }
 
         return {
-          id: user.id.toString(),
+          id: String(user.id),
           email: user.email,
-          name: user.name,
-          role: user.role,
-          householdId: user.householdId,
-        }
+          name: user.name || undefined,
+          role: user.role || 'USER',
+          householdId: user.householdId ?? null,
+        } as any
       },
     }),
   ],
@@ -65,20 +69,15 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // @ts-ignore
         token.role = (user as any).role || 'USER'
-        // @ts-ignore
-        token.householdId = (user as any).householdId
+        token.householdId = (user as any).householdId ?? null
       }
       return token
     },
     async session({ session, token }) {
-      // @ts-ignore
-      session.user = session.user || {}
-      // @ts-ignore
-      session.user.role = token.role
-      // @ts-ignore
-      session.user.householdId = token.householdId
+      ;(session.user as any) = session.user || {}
+      ;(session.user as any).role = (token as any).role
+      ;(session.user as any).householdId = (token as any).householdId
       return session
     },
   },

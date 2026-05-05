@@ -6,9 +6,24 @@ Kurze Dokumentation der Umgebungsvariablen, die das Projekt verwendet, inkl. Bei
 Wichtige Variablen
 ------------------
 
+- `BACKEND_URL`
+  - Zweck: Interne Backend-Basis-URL fuer Frontend-Proxy und NextAuth Credentials-Authorize.
+  - In Docker Compose (split): `http://backend:3001`
+  - Lokal ohne Docker: `http://localhost:3001`
+
+- `NEXT_PUBLIC_API_BASE`
+  - Zweck: Fallback fuer API-Basis im Frontend (browserseitig sichtbar).
+  - Empfehlung: gleich zu `BACKEND_URL` setzen.
+  - Beispiel: `NEXT_PUBLIC_API_BASE=http://backend:3001`
+
 - `APP_URL`
   - Zweck: Basis-URL der App, wird in E‑Mail-Links verwendet (z. B. `http://localhost:3000`).
   - Beispiel: `APP_URL=http://localhost:3000`
+
+- `NEXTAUTH_URL`
+  - Zweck: Oeffentliche URL fuer NextAuth Callback/Session-Flows.
+  - In der Regel identisch zu `APP_URL`.
+  - Beispiel: `NEXTAUTH_URL=http://localhost:3000`
 
 - `NEXTAUTH_SECRET`
   - Zweck: Secret für NextAuth (JWT/Session-Signing). Muss sicher sein.
@@ -44,6 +59,15 @@ Wichtige Variablen
     - `false`: E‑Mails werden nicht gesendet. Nützlich für Offline-Tests.
   - Beispiel: `EMAIL_AUTH_ENABLED=true`
 
+  - `DATABASE_URL`
+    - Zweck: Datenbankverbindung fuer Backend/Prisma.
+    - Empfehlung in Containern: absoluter Pfad, z. B. `file:/data/nomnom.db`.
+    - Beispiel lokal: `DATABASE_URL=file:./data/nomnom.db`
+
+  - `BASE_PATH`, `NEXT_PUBLIC_BASE_PATH`, `NEXT_PUBLIC_BASE_URL`
+    - Zweck: Deployment unter Unterpfad (z. B. `/nomnomstock`).
+    - Leer lassen fuer Root-Deployment.
+
 Hinweise zum Registrierungs-Flow
 --------------------------------
 - Wenn `EMAIL_AUTH_ENABLED=true` (Standard):
@@ -77,7 +101,11 @@ Beispiel `.env`-Ausschnitt
 --------------------------
 ```
 APP_URL=http://localhost:3000
+NEXTAUTH_URL=http://localhost:3000
+BACKEND_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE=http://localhost:3001
 NEXTAUTH_SECRET=replace_with_secure_hex_32_bytes
+DATABASE_URL=file:/data/nomnom.db
 SUPER_ADMIN_EMAIL=admin@example.com
 SMTP_HOST=smtp.strato.de
 SMTP_PORT=587
