@@ -11,7 +11,8 @@ Schnellstart:
 # im Repo-Root
 pnpm install
 
-# Prisma generieren + Migration (lokal sqlite)
+# Prisma generieren + Migration (lokal sqlite, Schema in backend/prisma)
+mkdir -p backend/prisma/data && touch backend/prisma/data/nomnom.db
 pnpm --filter nomnomstock-backend run prisma:generate
 DATABASE_URL=file:./data/nomnom.db pnpm --filter nomnomstock-backend run prisma:migrate
 DATABASE_URL=file:./data/nomnom.db pnpm --filter nomnomstock-backend run prisma:seed
@@ -34,5 +35,6 @@ NEXTAUTH_SECRET=change_me
 BACKEND_URL=http://localhost:3001
 NEXT_PUBLIC_API_BASE=http://localhost:3001
 DATABASE_URL=file:./data/nomnom.db
+UPLOAD_DIR=./data/uploads
 EMAIL_AUTH_ENABLED=false
 ```

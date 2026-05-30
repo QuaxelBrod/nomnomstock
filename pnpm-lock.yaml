@@ -118,9 +118,15 @@ importers:
 
   frontends/web:
     dependencies:
+      '@zxing/library':
+        specifier: ^0.18.6
+        version: 0.18.6
       next:
         specifier: ^14.0.0
         version: 14.2.35(react-dom@18.3.1)(react@18.3.1)
+      next-auth:
+        specifier: ^4.22.1
+        version: 4.24.14(next@14.2.35)(nodemailer@7.0.13)(react-dom@18.3.1)(react@18.3.1)
       nomnomstock-shared:
         specifier: workspace:*
         version: link:../../packages/shared

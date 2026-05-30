@@ -1,5 +1,15 @@
-import '../lib/env.js'
+import path from 'node:path'
 import { PrismaClient } from '@prisma/client'
+
+try {
+  await import('dotenv/config')
+} catch {
+  // dotenv is optional for this maintenance script
+}
+
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = `file:${path.resolve(process.cwd(), 'backend', 'prisma', 'data', 'nomnom.db')}`
+}
 
 const prisma = new PrismaClient()
 
@@ -9,7 +19,9 @@ async function mergeGroup(primary, others) {
     // Move or collapse stocks
     const dupStocks = await prisma.stock.findMany({ where: { productId: dup.id } })
     for (const s of dupStocks) {
-      const existing = await prisma.stock.findFirst({ where: { productId: primary.id, locationId: s.locationId, householdId: s.householdId } })
+      const existing = await prisma.stock.findFirst({
+        where: { productId: primary.id, locationId: s.locationId, householdId: s.householdId },
+      })
       if (existing) {
         await prisma.stock.update({ where: { id: existing.id }, data: { quantity: existing.quantity + s.quantity } })
         await prisma.stock.delete({ where: { id: s.id } })
@@ -53,7 +65,9 @@ async function run() {
     const remaining = await prisma.product.findMany({ orderBy: { id: 'asc' } })
     const byName = new Map()
     for (const p of remaining) {
-      const key = String(p.name || '').trim().toLowerCase()
+      const key = String(p.name || '')
+        .trim()
+        .toLowerCase()
       if (!key) continue
       const arr = byName.get(key) || []
       arr.push(p)

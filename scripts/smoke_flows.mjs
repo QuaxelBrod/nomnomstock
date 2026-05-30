@@ -5,8 +5,26 @@ import path from 'node:path'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const baseUrl = process.env.SMOKE_BASE_URL || 'http://localhost:3000'
-const backendBaseUrl = process.env.SMOKE_BACKEND_BASE_URL || process.env.BACKEND_URL || 'http://localhost:3001'
+function normalizeBaseUrl(value) {
+  return String(value || '').replace(/\/$/, '')
+}
+
+const smokeMode = process.env.SMOKE_MODE || 'web'
+if (!['web', 'backend'].includes(smokeMode)) {
+  throw new Error(`Invalid SMOKE_MODE "${smokeMode}". Use "web" or "backend".`)
+}
+
+const webBaseUrl = normalizeBaseUrl(
+  process.env.SMOKE_WEB_BASE_URL || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
+)
+const backendBaseUrl = normalizeBaseUrl(
+  process.env.SMOKE_BACKEND_BASE_URL || process.env.BACKEND_URL || 'http://localhost:3001'
+)
+const authBaseUrl = normalizeBaseUrl(process.env.SMOKE_AUTH_BASE_URL || webBaseUrl)
+const apiBaseUrl = normalizeBaseUrl(
+  process.env.SMOKE_API_BASE_URL || (smokeMode === 'backend' ? backendBaseUrl : webBaseUrl)
+)
+const apiPrefix = normalizeBaseUrl(process.env.SMOKE_API_PREFIX || '')
 
 if (!process.env.DATABASE_URL) {
   const defaultDbPath = path.resolve(process.cwd(), 'backend', 'prisma', 'data', 'nomnom.db')
@@ -58,7 +76,7 @@ function asStatusList(status) {
 
 async function request(
   pathname,
-  { method = 'GET', jar, json, form, body, expectedStatus = [200], base = baseUrl } = {}
+  { method = 'GET', jar, json, form, body, expectedStatus = [200], base = apiBaseUrl, prefixApi = true } = {}
 ) {
   const headers = {}
   const cookieHeader = jar?.toHeader()
@@ -73,7 +91,10 @@ async function request(
     payload = new URLSearchParams(form).toString()
   }
 
-  const response = await fetch(`${base}${pathname}`, {
+  const targetPath =
+    prefixApi && apiPrefix && pathname.startsWith('/api/') ? `${apiPrefix}/${pathname.slice('/api/'.length)}` : pathname
+
+  const response = await fetch(`${base}${targetPath}`, {
     method,
     headers,
     body: payload,
@@ -92,9 +113,7 @@ async function request(
 
   const allowed = asStatusList(expectedStatus)
   if (!allowed.includes(response.status)) {
-    throw new Error(
-      `Unexpected status ${response.status} for ${method} ${pathname}. Body: ${text.slice(0, 400)}`
-    )
+    throw new Error(`Unexpected status ${response.status} for ${method} ${targetPath}. Body: ${text.slice(0, 400)}`)
   }
 
   return { response, text, data }
@@ -103,13 +122,20 @@ async function request(
 async function loginWithCredentials(email, password) {
   const jar = new CookieJar()
 
-  const csrf = await request('/api/auth/csrf', { jar, expectedStatus: [200] })
+  const csrf = await request('/api/auth/csrf', {
+    jar,
+    base: authBaseUrl,
+    prefixApi: false,
+    expectedStatus: [200],
+  })
   const csrfToken = csrf.data?.csrfToken
   assert.ok(csrfToken, 'csrf token missing')
 
   await request('/api/auth/callback/credentials', {
     method: 'POST',
     jar,
+    base: authBaseUrl,
+    prefixApi: false,
     form: {
       csrfToken,
       email,
@@ -120,7 +146,12 @@ async function loginWithCredentials(email, password) {
     expectedStatus: [200, 302],
   })
 
-  const session = await request('/api/auth/session', { jar, expectedStatus: [200] })
+  const session = await request('/api/auth/session', {
+    jar,
+    base: authBaseUrl,
+    prefixApi: false,
+    expectedStatus: [200],
+  })
   assert.equal(session.data?.user?.email?.toLowerCase(), email.toLowerCase(), 'login session email mismatch')
 
   return jar
@@ -131,6 +162,13 @@ function step(label) {
 }
 
 async function main() {
+  console.log(
+    `[smoke] mode=${smokeMode} authBase=${authBaseUrl} apiBase=${apiBaseUrl} apiPrefix=${apiPrefix || '(none)'} backendBase=${backendBaseUrl}`
+  )
+
+  step('API health')
+  await request('/api/health', { expectedStatus: [200] })
+
   const ts = Date.now()
   const inviterEmail = `smoke.inviter.${ts}@example.com`
   const invitedEmail = `smoke.invited.${ts}@example.com`
@@ -302,7 +340,12 @@ async function main() {
   })
 
   const invitedJar = await loginWithCredentials(invitedEmail, invitedPassword)
-  const invitedSession = await request('/api/auth/session', { jar: invitedJar, expectedStatus: [200] })
+  const invitedSession = await request('/api/auth/session', {
+    jar: invitedJar,
+    base: authBaseUrl,
+    prefixApi: false,
+    expectedStatus: [200],
+  })
   assert.equal(
     invitedSession.data?.user?.email?.toLowerCase(),
     invitedEmail.toLowerCase(),

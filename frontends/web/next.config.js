@@ -1,7 +1,6 @@
 // Load environment normalization before Next initializes
 // prefer the JS initializer so Node can require it directly
-// load root env normalizer
-require('../../lib/env.js')
+require('./lib/env.js')
 
 /** @type {import('next').NextConfig} */
 // Determine a basePath for deployments that run the app under a sub-path
@@ -23,7 +22,7 @@ const nextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
-  // transpilePackages: ['nomnomstock-shared'], // disabled for debugging duplicate Next internals
+  transpilePackages: ['nomnomstock-shared'],
   // set basePath and assetPrefix when deploying under a sub-path
   ...(basePath ? { basePath, assetPrefix: basePath } : {}),
   env: {

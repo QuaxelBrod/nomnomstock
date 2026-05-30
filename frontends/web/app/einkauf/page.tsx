@@ -14,7 +14,7 @@ export default async function EinkaufPage() {
     const client = new ApiClient(backendBase)
     // forward incoming cookies so backend can infer auth/session
     const cookieHeader = cookies().toString()
-    const res = await client.request<{ items: any[] }>(`/api/shopping`, { method: 'GET', headers: cookieHeader ? { cookie: cookieHeader } : undefined })
+    const res = await client.getShopping({ headers: cookieHeader ? { cookie: cookieHeader } : undefined })
     items = res?.items || []
   } catch (err: any) {
     console.error('[einkauf] failed to load shopping list', err)

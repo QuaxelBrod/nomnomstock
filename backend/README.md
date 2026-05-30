@@ -1,10 +1,10 @@
 Backend
 =======
 
-This folder will contain the server-side code: Prisma schema, DB migrations, API implementations.
+This folder contains the server-side code: Prisma schema, DB migrations, API implementations and backend-owned upload storage.
 
-Planned contents:
-- `prisma/` (moved from repo root)
-- `src/` (server entrypoint and API route handlers)
+Contents:
+- `prisma/` - Prisma schema, migrations and seed
+- `src/` - server entrypoint and API route handlers
 
 Use the workspace `nomnomstock-backend` to run backend tasks.

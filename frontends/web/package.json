@@ -8,16 +8,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "rm -rf .next && NODE_ENV=production next build",
+    "typecheck": "tsc --noEmit --incremental false",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
     "postinstall": "echo 'No-op postinstall for web'"
   },
   "dependencies": {
+    "@zxing/library": "^0.18.6",
     "next": "^14.0.0",
+    "next-auth": "^4.22.1",
+    "nomnomstock-shared": "workspace:*",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "nomnomstock-shared": "workspace:*"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "typescript": "^5.1.0",

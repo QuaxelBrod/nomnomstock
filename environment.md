@@ -62,7 +62,12 @@ Wichtige Variablen
   - `DATABASE_URL`
     - Zweck: Datenbankverbindung fuer Backend/Prisma.
     - Empfehlung in Containern: absoluter Pfad, z. B. `file:/data/nomnom.db`.
-    - Beispiel lokal: `DATABASE_URL=file:./data/nomnom.db`
+    - Beispiel lokal mit Backend-Schema: `DATABASE_URL=file:./data/nomnom.db` und Datei unter `backend/prisma/data/nomnom.db`.
+
+  - `UPLOAD_DIR`
+    - Zweck: Backend-eigener Speicherort fuer Produkt- und Profilbilder.
+    - Empfehlung in Containern: `UPLOAD_DIR=/data/uploads`.
+    - Beispiel lokal: `UPLOAD_DIR=./data/uploads`
 
   - `BASE_PATH`, `NEXT_PUBLIC_BASE_PATH`, `NEXT_PUBLIC_BASE_URL`
     - Zweck: Deployment unter Unterpfad (z. B. `/nomnomstock`).
@@ -106,6 +111,7 @@ BACKEND_URL=http://localhost:3001
 NEXT_PUBLIC_API_BASE=http://localhost:3001
 NEXTAUTH_SECRET=replace_with_secure_hex_32_bytes
 DATABASE_URL=file:/data/nomnom.db
+UPLOAD_DIR=/data/uploads
 SUPER_ADMIN_EMAIL=admin@example.com
 SMTP_HOST=smtp.strato.de
 SMTP_PORT=587

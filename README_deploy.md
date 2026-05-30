@@ -70,8 +70,7 @@ Studio ist dann auf Port 8068 verfügbar.
 5) Persistenz
 -------------
 Die Production-Compose nutzt Named Volumes:
-- data (SQLite DB)
-- uploads (Produkt-/Profilbilder, von backend und web gemeinsam verwendet)
+- data (SQLite DB und Backend-Uploads unter `/data/uploads`)
 
 6) Logs und Prüfung
 -------------------

@@ -17,6 +17,7 @@
     "build:backend": "pnpm --filter nomnomstock-backend run build",
     "build:web": "pnpm --filter nomnomstock-web run build",
     "build": "pnpm run build:shared && pnpm run build:backend && pnpm run build:web",
+    "typecheck": "pnpm --filter nomnomstock-shared run typecheck && pnpm --filter nomnomstock-backend run typecheck && pnpm --filter nomnomstock-web run typecheck",
     "start": "pnpm --filter nomnomstock-web run start",
     "start:backend": "pnpm --filter nomnomstock-backend run start",
     "lint": "pnpm --filter nomnomstock-web run lint",
@@ -26,7 +27,9 @@
     "prisma:studio": "pnpm --filter nomnomstock-backend run prisma:studio",
     "prisma:seed": "pnpm --filter nomnomstock-backend run prisma:seed",
     "merge:products": "node scripts/merge_products.mjs",
-    "smoke:flows": "node scripts/smoke_flows.mjs"
+    "smoke:flows": "node scripts/smoke_flows.mjs",
+    "smoke:flows:web": "SMOKE_MODE=web node scripts/smoke_flows.mjs",
+    "smoke:flows:backend": "SMOKE_MODE=backend node scripts/smoke_flows.mjs"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.5",

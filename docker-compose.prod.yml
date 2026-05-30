@@ -31,6 +31,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      UPLOAD_DIR: /data/uploads
       EMAIL_AUTH_ENABLED: ${EMAIL_AUTH_ENABLED:-true}
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@example.com}
       OLLAMA_URL: ${OLLAMA_URL:-}
@@ -38,7 +39,6 @@ services:
       OLLAMA_ENABLED: ${OLLAMA_ENABLED:-true}
     volumes:
       - data:/data
-      - uploads:/app/frontends/web/public/uploads
     expose:
       - '3001'
 
@@ -58,8 +58,6 @@ services:
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
       BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://backend:3001}
-    volumes:
-      - uploads:/app/frontends/web/public/uploads
     ports:
       - '8069:3000'
 
@@ -74,7 +72,8 @@ services:
     volumes:
       - data:/data
     command: >-
-      sh -c "pnpm --filter nomnomstock-backend exec prisma generate
+      sh -c "mkdir -p /data && touch /data/nomnom.db
+      && pnpm --filter nomnomstock-backend exec prisma generate
       && pnpm --filter nomnomstock-backend exec prisma migrate deploy
       && if [ -f /app/backend/prisma/seed.js ]; then node /app/backend/prisma/seed.js || true; fi"
     restart: 'no'
@@ -97,4 +96,3 @@ services:
 
 volumes:
   data:
-  uploads:

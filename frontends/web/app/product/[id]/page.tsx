@@ -8,7 +8,7 @@ export default async function ProductPage({ params }: Props) {
   const id = Number(params.id)
   const backendBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_BASE || ''
   const client = new ApiClient(backendBase)
-  const product = await client.get<any>(`/api/products/${id}`)
+  const product = await client.getProduct(id) as any
   if (!product) return (<main className="p-6"><h2 className="text-xl font-semibold">Produkt nicht gefunden</h2></main>)
 
   const MoveStock = dynamicImport(() => import('../../../components/MoveStock'), { ssr: false })

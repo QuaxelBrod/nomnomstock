@@ -8,6 +8,7 @@ if [ ! -f "$DB_PATH" ]; then
 fi
 
 mkdir -p /data
+touch "$DB_PATH"
 
 # Ensure prisma client exists
 echo "[init] generating prisma client"
@@ -18,8 +19,8 @@ npx prisma migrate deploy
 
 if [ "$FIRST" -eq 1 ]; then
   echo "[init] database created — running seed (if present)"
-  if [ -f /app/prisma/seed.js ]; then
-    node /app/prisma/seed.js || true
+  if [ -f /app/backend/prisma/seed.js ]; then
+    node /app/backend/prisma/seed.js || true
   fi
 fi
 

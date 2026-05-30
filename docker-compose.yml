@@ -19,6 +19,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      UPLOAD_DIR: /data/uploads
       OLLAMA_URL: ${OLLAMA_URL:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-cortex}
       OLLAMA_ENABLED: ${OLLAMA_ENABLED:-false}
@@ -26,7 +27,6 @@ services:
       - ./:/app
       - pnpm-store:/pnpm/store
       - data:/data
-      - uploads:/app/frontends/web/public/uploads
     ports:
       - "3001:3001"
 
@@ -51,11 +51,9 @@ services:
     volumes:
       - ./:/app
       - pnpm-store:/pnpm/store
-      - uploads:/app/frontends/web/public/uploads
     ports:
       - "3000:3000"
 
 volumes:
   pnpm-store:
   data:
-  uploads:

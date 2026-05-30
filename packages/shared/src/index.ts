@@ -1,2 +1,3 @@
 export * from './types'
-export { ApiClient } from './apiClient'
+export { ApiClient, ApiRequestError } from './apiClient'
+export type { ApiClientOptions, RequestOptions } from './apiClient'

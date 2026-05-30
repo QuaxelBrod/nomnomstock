@@ -29,6 +29,7 @@ This README explains features, local setup, deployment hints and common troubles
 - Household support: data isolated per household
 
 Planned:
+
 - Voice control (ASR + Ollama parsing)
 - Server-side ASR fallback (Whisper/whisper.cpp)
 
@@ -59,6 +60,7 @@ cp .env.example .env
 Initialize Prisma and seed DB (local development):
 
 ```bash
+mkdir -p backend/prisma/data && touch backend/prisma/data/nomnom.db
 npm run prisma:generate
 DATABASE_URL=file:./data/nomnom.db npm run prisma:migrate
 DATABASE_URL=file:./data/nomnom.db npm run prisma:seed
@@ -70,6 +72,18 @@ Run in development:
 npm run dev
 # Open http://localhost:3000
 ```
+
+Development checks:
+
+```bash
+pnpm run typecheck
+pnpm run smoke:flows:web
+pnpm run smoke:flows:backend
+```
+
+Smoke tests need the web app on `http://localhost:3000`, the backend on `http://localhost:3001`, and `DATABASE_URL` pointing at the same SQLite database used by the running backend. `smoke:flows:web` sends the business API calls through the web `/api/*` proxy. `smoke:flows:backend` still logs in through the web NextAuth endpoint, then calls the backend API directly.
+
+Generated build artifacts are treated as disposable local output. `dist/`, `.next/`, and `*.tsbuildinfo` should stay out of new commits; existing tracked generated files will be cleaned up in the ownership cleanup phase.
 
 ---
 
@@ -86,6 +100,7 @@ docker compose -f docker-compose.prod.yml run --rm migrate
 Important env vars for production:
 
 - `DATABASE_URL` — e.g. `file:/data/nomnom.db` in containers
+- `UPLOAD_DIR` — backend-owned upload directory, e.g. `/data/uploads` in containers
 - `NEXTAUTH_URL` — full URL of the app, e.g. `https://example.com/nomnomstock`
 - `NEXTAUTH_SECRET` — strong random secret
 - `NEXT_PUBLIC_BASE_PATH` — if app is served under a subpath (e.g. `/nomnomstock`)
@@ -106,6 +121,7 @@ Note: The Dockerfile expects `emails/` to be copied into the runtime image so te
 5. To add shopping items: `Einkauf` → `Produkt hinzufügen` (name, quantity, note).
 
 Tips:
+
 - Use descriptive location names (Kühlschrank, Speisekammer) for reliable voice/entity matches later.
 - Use Scan-Flow to avoid duplicate products.
 
@@ -113,7 +129,7 @@ Tips:
 
 ## API quick reference
 
-These endpoints are implemented as Next.js route handlers under `app/api`:
+These endpoints are implemented by the Express backend under `backend/src/server.ts`. The web frontend forwards same-origin `/api/*` requests through its proxy route.
 
 - `GET /api/stock` — list stocks (aggregated)
 - `POST /api/stock` — add stock (productId or barcode, quantity, locationId)
@@ -124,6 +140,8 @@ These endpoints are implemented as Next.js route handlers under `app/api`:
 - `POST /api/lookup` — lookup product by barcode
 
 All mutation endpoints require authentication (NextAuth JWT/token). See the code for exact request/response shapes.
+
+For the versioned external contract, use `/api/v1/*`. See `docs/api-v1.md` or `GET /api/v1/openapi.json`.
 
 ---
 
@@ -197,10 +215,12 @@ See `progress.md` for a project task list and current priorities. Major remainin
 ---
 
 If you want, I can now:
+
 - Add a short INSTALL.md with environment variable examples and `nginx` examples, or
 - Generate a short API reference (OpenAPI / simple markdown) for the implemented endpoints.
 
 Enjoy — if you want the README adjusted for printing (PDF-optimized CSS or shorter version), tell me which format you prefer.
+
 # nomnomstock
 
 Kurzanleitung zum Entwickeln und Starten
@@ -216,7 +236,7 @@ Lokale Entwicklung (ohne Docker)
 ```bash
 cp .env.example .env
 npm install
-# ggf. SQLite-Datei initialisieren: mkdir -p data && touch data/nomnom.db
+# ggf. SQLite-Datei initialisieren: mkdir -p backend/prisma/data && touch backend/prisma/data/nomnom.db
 npm run dev
 ```
 
@@ -231,8 +251,8 @@ Wichtige Dateien
 
 - `docker-compose.yml` – Dev/Compose-Konfiguration
 - `Dockerfile` – Container-Build
-- `./data/nomnom.db` – gemountete SQLite-Datei (nicht im VCS)
-- `prisma/` – (optional) Prisma-Schema & Migrationen
+- `backend/prisma/data/nomnom.db` – lokale SQLite-Datei (nicht im VCS)
+- `backend/prisma/` – Prisma-Schema, Migrationen und Seed
 - `implementation_plan.md` – Implementierungsplan
 - `progress.md` – Aktueller Fortschritt
 

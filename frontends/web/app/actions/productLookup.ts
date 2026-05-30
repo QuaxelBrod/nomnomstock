@@ -6,7 +6,7 @@ export async function productLookup(barcode: string): Promise<ProductDTO | null>
   const apiBase = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_BASE || ''
   const client = new ApiClient(apiBase)
   try {
-    const res = await client.post<{ found: boolean; product?: ProductDTO }>('/api/lookup', { barcode })
+    const res = await client.lookupProduct({ barcode })
     if (!res || !res.found) return null
     return res.product || null
   } catch (e) {
