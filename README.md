@@ -143,6 +143,7 @@ These endpoints are implemented by the Express backend under `backend/src/server
 All mutation endpoints require authentication (NextAuth JWT/token). See the code for exact request/response shapes.
 
 For the versioned external contract, use `/api/v1/*`. See `docs/api-v1.md` or `GET /api/v1/openapi.json`.
+For the 1D ESP scanner protocol, see `docs/esp-1d-scanner.md`.
 
 ---
 

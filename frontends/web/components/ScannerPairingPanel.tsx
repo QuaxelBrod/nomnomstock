@@ -23,6 +23,14 @@ type Device = {
   lastSeenAt?: string | null
 }
 
+type RotatedToken = {
+  deviceId: number
+  deviceName: string
+  token: string
+  apiBase: string
+  tokenPrefix: string
+}
+
 type Location = {
   id: number
   name: string
@@ -36,6 +44,8 @@ export default function ScannerPairingPanel() {
   const [defaultLocationId, setDefaultLocationId] = useState('')
   const [defaultMode, setDefaultMode] = useState<'lookup' | 'stock_add'>('lookup')
   const [pairing, setPairing] = useState<Pairing | null>(null)
+  const [rotatedToken, setRotatedToken] = useState<RotatedToken | null>(null)
+  const [busyDeviceId, setBusyDeviceId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,6 +75,7 @@ export default function ScannerPairingPanel() {
     setLoading(true)
     setError(null)
     setPairing(null)
+    setRotatedToken(null)
 
     try {
       const res = await fetch(`${base}/api/devices/pairing`, {
@@ -90,8 +101,34 @@ export default function ScannerPairingPanel() {
   }
 
   const revokeDevice = async (id: number) => {
+    setBusyDeviceId(id)
     const res = await fetch(`${base}/api/devices/${id}/revoke`, { method: 'POST' })
     if (res.ok) await loadDevices()
+    setBusyDeviceId(null)
+  }
+
+  const rotateToken = async (device: Device) => {
+    setBusyDeviceId(device.id)
+    setError(null)
+    setRotatedToken(null)
+
+    try {
+      const res = await fetch(`${base}/api/devices/${device.id}/rotate-token`, { method: 'POST' })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body?.error?.message || body?.error || 'rotate_failed')
+      setRotatedToken({
+        deviceId: device.id,
+        deviceName: device.name,
+        token: body.token,
+        apiBase: body.apiBase,
+        tokenPrefix: body.tokenPrefix,
+      })
+      await loadDevices()
+    } catch (err: any) {
+      setError(err?.message || 'Token-Rotation fehlgeschlagen')
+    } finally {
+      setBusyDeviceId(null)
+    }
   }
 
   return (
@@ -153,6 +190,20 @@ export default function ScannerPairingPanel() {
         </div>
       )}
 
+      {rotatedToken && (
+        <div className="mt-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+          <div className="font-medium text-amber-950 dark:text-amber-100">
+            Neuer Token fuer {rotatedToken.deviceName}
+          </div>
+          <div className="mt-2 break-all">
+            <span className="text-gray-600 dark:text-gray-400">Token:</span>{' '}
+            <strong className="text-black dark:text-white">{rotatedToken.token}</strong>
+          </div>
+          <div className="mt-1 break-all text-gray-600 dark:text-gray-400">API: {rotatedToken.apiBase}</div>
+          <div className="mt-1 text-gray-600 dark:text-gray-400">Der alte Token ist widerrufen. Dieser Wert wird nur hier angezeigt.</div>
+        </div>
+      )}
+
       {devices.length > 0 && (
         <div className="mt-5 space-y-2">
           {devices.map((device) => (
@@ -164,13 +215,24 @@ export default function ScannerPairingPanel() {
                 </div>
               </div>
               {device.status === 'active' && (
-                <button
-                  type="button"
-                  onClick={() => revokeDevice(device.id)}
-                  className="action-fullmobile rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-300"
-                >
-                  Widerrufen
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    disabled={busyDeviceId === device.id}
+                    onClick={() => rotateToken(device)}
+                    className="action-fullmobile rounded border border-blue-300 px-3 py-1 text-sm text-blue-700 disabled:opacity-60 dark:border-blue-800 dark:text-blue-300"
+                  >
+                    Token rotieren
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyDeviceId === device.id}
+                    onClick={() => revokeDevice(device.id)}
+                    className="action-fullmobile rounded border border-red-300 px-3 py-1 text-sm text-red-700 disabled:opacity-60 dark:border-red-800 dark:text-red-300"
+                  >
+                    Widerrufen
+                  </button>
+                </div>
               )}
             </div>
           ))}

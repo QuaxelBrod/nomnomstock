@@ -253,6 +253,9 @@ export const openApiDocument = {
     '/devices/{id}/revoke': {
       post: { summary: 'Revoke a paired device and its tokens', parameters: [{ name: 'id', in: 'path', required: true }] },
     },
+    '/devices/{id}/rotate-token': {
+      post: { summary: 'Rotate a device token', parameters: [{ name: 'id', in: 'path', required: true }] },
+    },
     '/scanner/events': {
       get: { summary: 'List scanner events' },
       post: { summary: 'Create scanner event from a 1D barcode scan' },

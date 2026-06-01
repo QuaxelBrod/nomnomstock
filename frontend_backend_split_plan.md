@@ -83,6 +83,9 @@ Umgesetzt am 2026-05-30:
 - `POST /api/v1/scanner/events` speichert 1D-Scans als Haushalt-/Device-gebundene Events; Web-Clients koennen sie ueber `GET/PATCH /api/v1/scanner/events` verarbeiten.
 - Die Profilseite enthaelt eine erste "Scanner koppeln"-UI inklusive Geraeteliste und Widerruf.
 - Die Scan-Seite zeigt pending ESP-Scans und kann sie einbuchen oder ignorieren.
+- Geraete-Tokens koennen rotiert werden; alte Tokens werden dabei direkt widerrufen.
+- Die Scan-Seite aktualisiert pending ESP-Scans automatisch und erlaubt Lagerort/Menge pro Event.
+- `docs/esp-1d-scanner.md` beschreibt das 1D-Protokoll fuer Pairing und Scan-Events.
 - Shared DTOs und API-Client kennen die Device-/Pairing-Methoden.
 
 ### Phase 0: Bestand stabilisieren
@@ -179,5 +182,5 @@ Optional spaeter:
 ## Naechste konkrete Umsetzung
 
 1. ESP-Firmware gegen `POST /api/v1/devices/pair` und `POST /api/v1/scanner/events` anbinden.
-2. Optional: Token-Rotation fuer gekoppelte Geraete ergaenzen.
-3. Scanner-Event-UI spaeter erweitern: Lagerort pro Event aendern, Bulk-Aktionen, Live-Polling.
+2. Optional: kleine Beispiel-Firmware oder HTTP-Client-Skizze fuer den konkreten ESP-Scanner ins Repo legen, sobald Board/Framework bekannt ist.
+3. Scanner-Event-UI spaeter erweitern: Bulk-Aktionen, Ton/Feedback, Offline-/Retry-Anzeige.

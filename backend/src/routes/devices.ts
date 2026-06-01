@@ -273,4 +273,64 @@ export function registerDeviceRoutes(app: Express) {
       return res.status(500).json({ error: 'server error' })
     }
   })
+
+  app.post(apiRoute('/api/devices/:id/rotate-token'), async (req, res) => {
+    try {
+      const auth = await requireAuth(req, res)
+      if (!auth) return
+
+      const id = parsePositiveInt(req.params.id)
+      if (!id) return sendApiError(res, 400, 'bad_request', 'invalid id')
+
+      const device = await prisma.device.findUnique({
+        where: { id },
+        include: {
+          tokens: {
+            where: { revokedAt: null },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      })
+      if (!device || (auth.householdId && device.householdId !== auth.householdId)) {
+        return sendApiError(res, 404, 'not_found', 'Device not found')
+      }
+      if (device.status !== 'active') {
+        return sendApiError(res, 400, 'bad_request', 'Device is not active')
+      }
+
+      const now = new Date()
+      const plainToken = generateApiToken()
+      const tokenPrefix = plainToken.slice(0, 12)
+      const scopes = device.tokens[0] ? parseScopes(device.tokens[0].scopes) : DEFAULT_DEVICE_SCOPES
+
+      await prisma.$transaction([
+        prisma.apiToken.updateMany({ where: { deviceId: id, revokedAt: null }, data: { revokedAt: now } }),
+        prisma.apiToken.create({
+          data: {
+            name: `${device.name} token`,
+            tokenHash: hashSecret(plainToken),
+            tokenPrefix,
+            scopes: serializeScopes(scopes),
+            clientType: 'device',
+            householdId: device.householdId,
+            userId: auth.userId || undefined,
+            deviceId: device.id,
+          },
+        }),
+      ])
+
+      return res.json({
+        ok: true,
+        device: publicDevice(device),
+        apiBase: resolveApiBaseUrl(req),
+        token: plainToken,
+        tokenPrefix,
+        scopes,
+      })
+    } catch (err) {
+      console.error('POST /api/devices/:id/rotate-token error', err)
+      return res.status(500).json({ error: 'server error' })
+    }
+  })
 }

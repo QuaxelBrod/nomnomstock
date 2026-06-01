@@ -115,6 +115,10 @@ NextAuth browser endpoints stay under `/api/auth/*` and are not part of the exte
 - `POST /api/v1/devices/:id/revoke`
   - Auth: web session
   - Revokes the device and all active tokens for that device.
+- `POST /api/v1/devices/:id/rotate-token`
+  - Auth: web session
+  - Revokes active tokens for the device and returns one new token exactly once.
+  - Response: `{ "ok": true, "device": Device, "apiBase": ".../api/v1", "token": "nns_...", "tokenPrefix": "nns_..." }`
 
 ## Scanner Events
 

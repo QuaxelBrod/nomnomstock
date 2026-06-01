@@ -310,7 +310,9 @@ async function main() {
     expectedStatus: [200],
   })
   const bearerToken = paired.data?.token
+  const pairedDeviceId = paired.data?.device?.id
   assert.ok(bearerToken, 'device bearer token missing')
+  assert.ok(pairedDeviceId, 'paired device id missing')
   assert.equal(paired.data?.defaultLocationId, locationId, 'paired device default location mismatch')
 
   await request('/api/locations', {
@@ -336,8 +338,27 @@ async function main() {
     'pending scanner event missing'
   )
 
-  await request(`/api/profile?email=${encodeURIComponent(inviterEmail)}`, {
+  const rotated = await request(`/api/devices/${pairedDeviceId}/rotate-token`, {
+    method: 'POST',
+    jar: inviterJar,
+    expectedStatus: [200],
+  })
+  const rotatedBearerToken = rotated.data?.token
+  assert.ok(rotatedBearerToken, 'rotated device bearer token missing')
+  assert.notEqual(rotatedBearerToken, bearerToken, 'rotated bearer token should differ from original token')
+
+  await request('/api/locations', {
     headers: { Authorization: `Bearer ${bearerToken}` },
+    expectedStatus: [401],
+  })
+
+  await request('/api/locations', {
+    headers: { Authorization: `Bearer ${rotatedBearerToken}` },
+    expectedStatus: [200],
+  })
+
+  await request(`/api/profile?email=${encodeURIComponent(inviterEmail)}`, {
+    headers: { Authorization: `Bearer ${rotatedBearerToken}` },
     expectedStatus: [403],
   })
 

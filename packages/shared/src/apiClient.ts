@@ -6,6 +6,7 @@ import type {
   DevicePairingCreateResponse,
   DevicePairRequest,
   DevicePairResponse,
+  DeviceTokenRotateResponse,
   ID,
   InviteRequest,
   Location,
@@ -254,6 +255,10 @@ export class ApiClient {
 
   revokeDevice(id: ID) {
     return this.post<OkResponse>(this.apiPath(`/devices/${id}/revoke`))
+  }
+
+  rotateDeviceToken(id: ID) {
+    return this.post<DeviceTokenRotateResponse>(this.apiPath(`/devices/${id}/rotate-token`))
   }
 
   createScannerEvent(body: ScannerEventCreateRequest) {

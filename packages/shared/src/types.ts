@@ -247,6 +247,15 @@ export type DevicePairResponse = {
   defaultLocationId?: ID | null
 }
 
+export type DeviceTokenRotateResponse = {
+  ok: true
+  device: Device
+  apiBase: string
+  token: string
+  tokenPrefix: string
+  scopes: string[]
+}
+
 export type DeviceListResponse = {
   devices: Device[]
 }

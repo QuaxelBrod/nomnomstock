@@ -21,9 +21,18 @@ type ScannerEvent = {
   } | null
 }
 
+type Location = {
+  id: number
+  name: string
+}
+
 export default function PendingScannerEvents({ fallbackLocationId }: { fallbackLocationId?: number | null }) {
   const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
   const [events, setEvents] = useState<ScannerEvent[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
+  const [selectedLocations, setSelectedLocations] = useState<Record<number, string>>({})
+  const [quantities, setQuantities] = useState<Record<number, string>>({})
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null)
   const [busyId, setBusyId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,15 +41,51 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
       const res = await fetch(`${base}/api/scanner/events?status=pending`)
       if (!res.ok) return
       const body = await res.json()
-      setEvents(Array.isArray(body?.events) ? body.events : [])
+      const nextEvents = Array.isArray(body?.events) ? body.events : []
+      setEvents(nextEvents)
+      setLastUpdatedAt(new Date())
+      setSelectedLocations((current) => {
+        const next = { ...current }
+        for (const event of nextEvents) {
+          if (!next[event.id]) next[event.id] = String(event.locationId || fallbackLocationId || '')
+        }
+        return next
+      })
+      setQuantities((current) => {
+        const next = { ...current }
+        for (const event of nextEvents) {
+          if (!next[event.id]) next[event.id] = String(event.quantity || 1)
+        }
+        return next
+      })
     } catch (err) {
       console.error('load scanner events error', err)
     }
-  }, [base])
+  }, [base, fallbackLocationId])
 
   useEffect(() => {
     loadEvents()
   }, [loadEvents])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      loadEvents()
+    }, 10000)
+    return () => window.clearInterval(timer)
+  }, [loadEvents])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const res = await fetch(`${base}/api/locations`)
+        if (!res.ok) return
+        const body = await res.json()
+        setLocations(Array.isArray(body) ? body : [])
+      } catch (err) {
+        console.error('load locations for scanner events error', err)
+      }
+    })()
+  }, [base])
 
   const patchEvent = async (id: number, body: Record<string, unknown>) => {
     const res = await fetch(`${base}/api/scanner/events/${id}`, {
@@ -65,11 +110,12 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
   }
 
   const addToStock = async (event: ScannerEvent) => {
-    const locationId = event.locationId || fallbackLocationId
+    const locationId = Number(selectedLocations[event.id] || event.locationId || fallbackLocationId || 0)
     if (!locationId) {
       setError('Bitte zuerst ein Lager auswaehlen')
       return
     }
+    const quantity = Number(quantities[event.id] || event.quantity || 1)
 
     setBusyId(event.id)
     setError(null)
@@ -81,7 +127,7 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
           productId: event.productId || undefined,
           barcode: event.productId ? undefined : event.barcode,
           locationId,
-          quantity: event.quantity || 1,
+          quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
         }),
       })
       if (!res.ok) throw new Error('stock_add_failed')
@@ -99,7 +145,14 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
   return (
     <section className="mb-5 rounded border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/30">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-medium text-blue-950 dark:text-blue-100">ESP-Scans</h3>
+        <div>
+          <h3 className="text-sm font-medium text-blue-950 dark:text-blue-100">ESP-Scans</h3>
+          {lastUpdatedAt && (
+            <div className="text-xs text-blue-900/70 dark:text-blue-200/70">
+              Aktualisiert {lastUpdatedAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          )}
+        </div>
         <button type="button" onClick={loadEvents} className="rounded border px-3 py-1 text-sm dark:border-gray-700">
           Aktualisieren
         </button>
@@ -117,7 +170,30 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
                   {event.device?.name || 'Scanner'} - {event.barcode}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="grid gap-2 sm:grid-cols-[minmax(11rem,1fr)_5rem_auto_auto] sm:items-center">
+                <select
+                  value={selectedLocations[event.id] || ''}
+                  onChange={(changeEvent) =>
+                    setSelectedLocations((current) => ({ ...current, [event.id]: changeEvent.target.value }))
+                  }
+                  className="text-sm text-black dark:bg-gray-800 dark:text-white"
+                >
+                  <option value="">Lager waehlen</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={quantities[event.id] || '1'}
+                  onChange={(changeEvent) =>
+                    setQuantities((current) => ({ ...current, [event.id]: changeEvent.target.value }))
+                  }
+                  inputMode="decimal"
+                  className="text-sm text-black dark:bg-gray-800 dark:text-white"
+                  aria-label="Menge"
+                />
                 <button
                   type="button"
                   disabled={busyId === event.id}
