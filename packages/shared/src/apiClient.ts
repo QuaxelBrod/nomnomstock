@@ -1,6 +1,11 @@
 import type {
   ApiErrorBody,
   ApiHealth,
+  DeviceListResponse,
+  DevicePairingCreateRequest,
+  DevicePairingCreateResponse,
+  DevicePairRequest,
+  DevicePairResponse,
   ID,
   InviteRequest,
   Location,
@@ -17,6 +22,10 @@ import type {
   RecipeGenerateResponse,
   RegisterRequest,
   RegisterResponse,
+  ScannerEventCreateRequest,
+  ScannerEventListResponse,
+  ScannerEventResponse,
+  ScannerEventUpdateRequest,
   ShoppingListAddRequest,
   ShoppingListItem,
   ShoppingListResponse,
@@ -229,6 +238,34 @@ export class ApiClient {
 
   invite(body: InviteRequest) {
     return this.post<OkResponse>(this.apiPath('/auth/invite'), body)
+  }
+
+  getDevices() {
+    return this.get<DeviceListResponse>(this.apiPath('/devices'))
+  }
+
+  createDevicePairing(body: DevicePairingCreateRequest = {}) {
+    return this.post<DevicePairingCreateResponse>(this.apiPath('/devices/pairing'), body)
+  }
+
+  pairDevice(body: DevicePairRequest) {
+    return this.post<DevicePairResponse>(this.apiPath('/devices/pair'), body)
+  }
+
+  revokeDevice(id: ID) {
+    return this.post<OkResponse>(this.apiPath(`/devices/${id}/revoke`))
+  }
+
+  createScannerEvent(body: ScannerEventCreateRequest) {
+    return this.post<ScannerEventResponse>(this.apiPath('/scanner/events'), body)
+  }
+
+  getScannerEvents(status = 'pending') {
+    return this.get<ScannerEventListResponse>(`${this.apiPath('/scanner/events')}?status=${encodeURIComponent(status)}`)
+  }
+
+  updateScannerEvent(id: ID, body: ScannerEventUpdateRequest) {
+    return this.patch<ScannerEventResponse>(this.apiPath(`/scanner/events/${id}`), body)
   }
 }
 

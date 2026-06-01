@@ -175,3 +175,124 @@ export type RegisterResponse = {
   ok: true
   message: string
 }
+
+export type Device = {
+  id: ID
+  name: string
+  type: string
+  status: string
+  householdId: ID
+  defaultLocationId?: ID | null
+  defaultMode: string
+  lastSeenAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+  tokens?: ApiTokenPublic[]
+}
+
+export type ApiTokenPublic = {
+  id: ID
+  tokenPrefix: string
+  scopes: string[]
+  lastUsedAt?: string | null
+  expiresAt?: string | null
+  revokedAt?: string | null
+  createdAt?: string
+}
+
+export type DevicePairingCreateRequest = {
+  name?: string
+  type?: string
+  defaultLocationId?: ID | null
+  defaultMode?: 'lookup' | 'stock_add' | 'shopping_check'
+  scopes?: string[]
+  ttlSeconds?: number
+}
+
+export type DevicePairingCreateResponse = {
+  ok: true
+  pairing: {
+    id: ID
+    key: string
+    keyPrefix: string
+    apiBase: string
+    qrPayload: string
+    expiresAt: string
+    scopes: string[]
+    defaultMode: string
+    defaultLocationId?: ID | null
+  }
+}
+
+export type DevicePairRequest = {
+  pairingKey?: string
+  pair?: string
+  key?: string
+  name?: string
+  type?: string
+  device?: {
+    name?: string
+    type?: string
+    firmwareVersion?: string
+  }
+}
+
+export type DevicePairResponse = {
+  ok: true
+  device: Device
+  apiBase: string
+  token: string
+  scopes: string[]
+  defaultMode: string
+  defaultLocationId?: ID | null
+}
+
+export type DeviceListResponse = {
+  devices: Device[]
+}
+
+export type ScannerEvent = {
+  id: ID
+  barcode: string
+  mode: 'lookup' | 'stock_add' | 'shopping_check' | string
+  source: string
+  status: 'pending' | 'processed' | 'ignored' | string
+  note?: string | null
+  rawPayload?: string | null
+  householdId: ID
+  deviceId?: ID | null
+  apiTokenId?: ID | null
+  productId?: ID | null
+  locationId?: ID | null
+  quantity?: number | null
+  processedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+  product?: Product | null
+  location?: Location | null
+  device?: Partial<Device> | null
+}
+
+export type ScannerEventCreateRequest = {
+  barcode: string
+  mode?: 'lookup' | 'stock_add' | 'shopping_check'
+  source?: string
+  locationId?: ID
+  quantity?: number
+}
+
+export type ScannerEventUpdateRequest = {
+  status?: 'pending' | 'processed' | 'ignored'
+  note?: string | null
+  productId?: ID
+  locationId?: ID
+}
+
+export type ScannerEventResponse = {
+  ok: true
+  event: ScannerEvent
+}
+
+export type ScannerEventListResponse = {
+  events: ScannerEvent[]
+}

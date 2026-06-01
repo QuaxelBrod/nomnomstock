@@ -16,6 +16,12 @@ Wichtige Variablen
   - Empfehlung: gleich zu `BACKEND_URL` setzen.
   - Beispiel: `NEXT_PUBLIC_API_BASE=http://backend:3001`
 
+- `API_BASE_URL`
+  - Zweck: Oeffentliche API-Basis fuer Scanner-Pairing-QR-Codes.
+  - Muss vom ESP erreichbar sein und auf `/api/v1` enden.
+  - Beispiel lokal: `API_BASE_URL=http://localhost:3001/api/v1`
+  - Beispiel produktiv: `API_BASE_URL=https://api.example.tld/api/v1`
+
 - `APP_URL`
   - Zweck: Basis-URL der App, wird in E‑Mail-Links verwendet (z. B. `http://localhost:3000`).
   - Beispiel: `APP_URL=http://localhost:3000`
@@ -109,6 +115,7 @@ APP_URL=http://localhost:3000
 NEXTAUTH_URL=http://localhost:3000
 BACKEND_URL=http://localhost:3001
 NEXT_PUBLIC_API_BASE=http://localhost:3001
+API_BASE_URL=http://localhost:3001/api/v1
 NEXTAUTH_SECRET=replace_with_secure_hex_32_bytes
 DATABASE_URL=file:/data/nomnom.db
 UPLOAD_DIR=/data/uploads

@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState, useRef } from 'react'
+import ScannerPairingPanel from '../../components/ScannerPairingPanel'
 
 export default function ProfilPage() {
   const { data: session } = useSession()
@@ -157,6 +158,8 @@ export default function ProfilPage() {
               <button className="action-fullmobile px-4 py-2 bg-blue-600 text-white rounded">Lagerorte</button>
             </Link>
           </div>
+
+          <ScannerPairingPanel />
 
           <div className="mt-6">
             <h3 className="text-sm font-medium mb-2">Darstellung</h3>

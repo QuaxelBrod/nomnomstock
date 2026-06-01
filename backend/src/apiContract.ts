@@ -138,6 +138,57 @@ export const openApiDocument = {
           product: { $ref: '#/components/schemas/Product' },
         },
       },
+      Device: {
+        type: 'object',
+        required: ['id', 'name', 'type', 'status', 'householdId', 'defaultMode'],
+        properties: {
+          id: { type: 'integer' },
+          name: { type: 'string' },
+          type: { type: 'string' },
+          status: { type: 'string' },
+          householdId: { type: 'integer' },
+          defaultLocationId: { type: ['integer', 'null'] },
+          defaultMode: { type: 'string' },
+          lastSeenAt: { type: ['string', 'null'], format: 'date-time' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      DevicePairing: {
+        type: 'object',
+        required: ['id', 'key', 'apiBase', 'qrPayload', 'expiresAt', 'scopes'],
+        properties: {
+          id: { type: 'integer' },
+          key: { type: 'string' },
+          keyPrefix: { type: 'string' },
+          apiBase: { type: 'string' },
+          qrPayload: { type: 'string' },
+          expiresAt: { type: 'string', format: 'date-time' },
+          scopes: { type: 'array', items: { type: 'string' } },
+          defaultMode: { type: 'string' },
+          defaultLocationId: { type: ['integer', 'null'] },
+        },
+      },
+      ScannerEvent: {
+        type: 'object',
+        required: ['id', 'barcode', 'mode', 'source', 'status', 'householdId'],
+        properties: {
+          id: { type: 'integer' },
+          barcode: { type: 'string' },
+          mode: { type: 'string', enum: ['lookup', 'stock_add', 'shopping_check'] },
+          source: { type: 'string' },
+          status: { type: 'string', enum: ['pending', 'processed', 'ignored'] },
+          note: { type: ['string', 'null'] },
+          householdId: { type: 'integer' },
+          deviceId: { type: ['integer', 'null'] },
+          productId: { type: ['integer', 'null'] },
+          locationId: { type: ['integer', 'null'] },
+          quantity: { type: ['number', 'null'] },
+          processedAt: { type: ['string', 'null'], format: 'date-time' },
+          createdAt: { type: 'string', format: 'date-time' },
+          product: { anyOf: [{ $ref: '#/components/schemas/Product' }, { type: 'null' }] },
+          location: { anyOf: [{ $ref: '#/components/schemas/Location' }, { type: 'null' }] },
+        },
+      },
     },
   },
   paths: {
@@ -189,6 +240,25 @@ export const openApiDocument = {
     },
     '/recipes/generate': {
       post: { summary: 'Generate recipe suggestion' },
+    },
+    '/devices': {
+      get: { summary: 'List paired devices' },
+    },
+    '/devices/pairing': {
+      post: { summary: 'Create short-lived scanner pairing key' },
+    },
+    '/devices/pair': {
+      post: { summary: 'Exchange pairing key for a device token', security: [] },
+    },
+    '/devices/{id}/revoke': {
+      post: { summary: 'Revoke a paired device and its tokens', parameters: [{ name: 'id', in: 'path', required: true }] },
+    },
+    '/scanner/events': {
+      get: { summary: 'List scanner events' },
+      post: { summary: 'Create scanner event from a 1D barcode scan' },
+    },
+    '/scanner/events/{id}': {
+      patch: { summary: 'Update scanner event status', parameters: [{ name: 'id', in: 'path', required: true }] },
     },
   },
 } as const

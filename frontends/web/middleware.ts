@@ -16,6 +16,7 @@ function resolveBasePath() {
 }
 
 const base = resolveBasePath()
+const PUBLIC_EXACT_PATHS_BASELESS = ['/api/devices/pair', '/api/v1/devices/pair']
 // list of public paths WITHOUT base prefix — we'll compare against a normalized pathname
 const PUBLIC_PATHS_BASELESS = [
   '/auth/login',
@@ -51,8 +52,14 @@ export async function middleware(req: NextRequest) {
     normPath.startsWith('/_next') ||
     normPath.startsWith('/static') ||
     normPath.startsWith('/fonts') ||
+    PUBLIC_EXACT_PATHS_BASELESS.includes(normPath) ||
     PUBLIC_PATHS_BASELESS.some((p) => normPath === p || normPath.startsWith(p))
   ) {
+    return NextResponse.next()
+  }
+
+  const authHeader = req.headers.get('authorization') || ''
+  if (normPath.startsWith('/api/') && /^Bearer\s+/i.test(authHeader)) {
     return NextResponse.next()
   }
 

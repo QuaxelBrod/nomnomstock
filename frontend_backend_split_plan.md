@@ -66,6 +66,25 @@ Umgesetzt am 2026-05-30:
 - `backend/src/server.ts` ist auf App-Setup und Routenregistrierung reduziert; fachliche Handler liegen unter `backend/src/routes/*`, gemeinsame Backend-Helfer unter `backend/src/serverUtils.ts`.
 - Verifiziert mit `pnpm run typecheck`, Web-Smoke, direktem Backend-Smoke und direktem `/api/v1`-Backend-Smoke.
 
+### Phase 3 Ergebnis
+
+Umgesetzt am 2026-05-30:
+
+- Prisma enthaelt `ApiToken`, `Device` und `DevicePairing` inklusive Migration.
+- `requireAuth` prueft zuerst `Authorization: Bearer <token>` und danach bestehende NextAuth-Cookies.
+- API-Tokens werden als SHA-256-Hash gespeichert; Klartext-Tokens werden nur bei erfolgreichem Pairing ausgegeben.
+- Device-Token besitzen Scopes. Der Standard fuer Scanner ist `scanner:write`, `product:lookup`, `stock:add`, `location:read`.
+- Neue Endpoints:
+  - `POST /api/v1/devices/pairing` erzeugt einen kurzlebigen Pairing-Key und QR-Payload.
+  - `POST /api/v1/devices/pair` tauscht den Pairing-Key einmalig gegen Device-Token und API-Basis-URL.
+  - `GET /api/v1/devices` listet gekoppelte Geraete.
+  - `POST /api/v1/devices/:id/revoke` widerruft Geraet und Tokens.
+- Fuer 1D-only ESP-Scanner zeigt das Web den Pairing-Key als Code-128-Barcode. Der ESP braucht die API-Basis vorerst vorkonfiguriert.
+- `POST /api/v1/scanner/events` speichert 1D-Scans als Haushalt-/Device-gebundene Events; Web-Clients koennen sie ueber `GET/PATCH /api/v1/scanner/events` verarbeiten.
+- Die Profilseite enthaelt eine erste "Scanner koppeln"-UI inklusive Geraeteliste und Widerruf.
+- Die Scan-Seite zeigt pending ESP-Scans und kann sie einbuchen oder ignorieren.
+- Shared DTOs und API-Client kennen die Device-/Pairing-Methoden.
+
 ### Phase 0: Bestand stabilisieren
 
 - Typechecks fuer `backend`, `frontends/web` und `packages/shared` als Pflicht-Check dokumentieren.
@@ -159,8 +178,6 @@ Optional spaeter:
 
 ## Naechste konkrete Umsetzung
 
-1. Backend-Auth-Middleware fuer Bearer-Tokens vorbereiten und mit dem bestehenden NextAuth-Cookie-Kontext zusammenfuehren.
-2. Prisma-Modelle fuer `ApiToken`, `Device` und `DevicePairing` samt Migration einfuehren.
-3. `/api/v1/devices/pair` implementieren: kurzlebiger Pairing-Key rein, einmaliger Device-Token raus.
-4. Web-UI fuer "Scanner koppeln" im Profil bauen und den Pairing-Key als QR-Code/Barcode anzeigen.
-5. Scanner-Event-Endpoints implementieren: `POST /api/v1/scanner/events`, spaeter `GET/PATCH` fuer Web-Pending-Scans.
+1. ESP-Firmware gegen `POST /api/v1/devices/pair` und `POST /api/v1/scanner/events` anbinden.
+2. Optional: Token-Rotation fuer gekoppelte Geraete ergaenzen.
+3. Scanner-Event-UI spaeter erweitern: Lagerort pro Event aendern, Bulk-Aktionen, Live-Polling.

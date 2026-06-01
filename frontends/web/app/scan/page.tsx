@@ -6,6 +6,7 @@ import dynamicImport from 'next/dynamic'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import LocationSelector from '../../components/LocationSelector'
 import CenteredCheck from '../../components/CenteredCheck'
+import PendingScannerEvents from '../../components/PendingScannerEvents'
 const ManualAdd = dynamicImport(() => import('../../components/ManualAdd'), { ssr: false })
 const AddStockModal = dynamicImport(() => import('../../components/AddStockModal'), { ssr: false })
 
@@ -108,6 +109,7 @@ export default function ScanPage() {
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto pb-28 md:pb-20">
       <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Scan</h2>
+      <PendingScannerEvents fallbackLocationId={locationId} />
       <div className="mb-3 flex items-center gap-2">
         <span className="text-sm text-gray-600 dark:text-gray-300">Kamera:</span>
         <button

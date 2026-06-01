@@ -1,4 +1,5 @@
 import type { Request as ExpressRequest, Response } from 'express'
+import { createHash, randomBytes } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { getToken } from 'next-auth/jwt'
@@ -12,6 +13,10 @@ export type AuthContext = {
   userId: number | null
   email: string | null
   role: string | null
+  scopes: string[]
+  clientType: 'web' | 'device' | 'api'
+  apiTokenId?: number
+  deviceId?: number | null
 }
 
 export type AuthUser = {
@@ -36,6 +41,36 @@ export function normalizeEmail(value: unknown) {
 export function isTruthy(value: string | undefined) {
   if (!value) return false
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase())
+}
+
+export function hashSecret(secret: string) {
+  return createHash('sha256').update(secret).digest('hex')
+}
+
+export function generatePairingKey() {
+  return `NNSP${randomBytes(12).toString('hex').toUpperCase()}`
+}
+
+export function generateApiToken() {
+  return `nns_${randomBytes(32).toString('base64url')}`
+}
+
+export function parseScopes(value: string | null | undefined) {
+  if (!value) return [] as string[]
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) return parsed.map((scope) => String(scope)).filter(Boolean)
+  } catch {
+    // Fall through to whitespace/comma parsing for older manually-created rows.
+  }
+  return value
+    .split(/[,\s]+/)
+    .map((scope) => scope.trim())
+    .filter(Boolean)
+}
+
+export function serializeScopes(scopes: string[]) {
+  return JSON.stringify(Array.from(new Set(scopes.filter(Boolean))))
 }
 
 function parseCookieHeader(value: string | string[] | undefined) {
@@ -136,7 +171,103 @@ async function getAuthToken(req: ExpressRequest) {
   return getToken({ req: reqForToken, secret, cookieName: '__Secure-next-auth.session-token' })
 }
 
+function getBearerToken(req: ExpressRequest) {
+  const header = Array.isArray(req.headers.authorization)
+    ? req.headers.authorization[0]
+    : req.headers.authorization || ''
+  const match = String(header).match(/^Bearer\s+(.+)$/i)
+  return match ? match[1].trim() : null
+}
+
+function normalizeApiPath(pathname: string) {
+  if (pathname.startsWith('/api/v1/')) return `/api/${pathname.slice('/api/v1/'.length)}`
+  return pathname
+}
+
+function requiredScopeForRequest(req: ExpressRequest) {
+  const method = req.method.toUpperCase()
+  const pathname = normalizeApiPath(req.path)
+
+  if (method === 'GET' && (pathname === '/api/health' || pathname === '/api/openapi.json')) return null
+  if (method === 'POST' && pathname === '/api/lookup') return 'product:lookup'
+  if (method === 'GET' && (pathname === '/api/products' || /^\/api\/products\/\d+$/.test(pathname))) return 'product:read'
+  if (method === 'GET' && pathname === '/api/locations') return 'location:read'
+  if (method === 'GET' && pathname === '/api/stock') return 'stock:read'
+  if (method === 'POST' && pathname === '/api/stock') return 'stock:add'
+  if (method === 'POST' && (pathname === '/api/stock/move' || /^\/api\/stock\/\d+\/reduce$/.test(pathname))) {
+    return 'stock:write'
+  }
+  if (method === 'POST' && pathname === '/api/scanner/events') return 'scanner:write'
+  if (method === 'GET' && pathname === '/api/scanner/events') return 'scanner:read'
+  if (method === 'PATCH' && /^\/api\/scanner\/events\/\d+$/.test(pathname)) return 'scanner:write'
+  if (pathname === '/api/devices' || pathname.startsWith('/api/devices/')) return 'device:manage'
+
+  return '*'
+}
+
+export function hasScope(auth: AuthContext, requiredScope: string | null) {
+  if (!requiredScope) return true
+  if (auth.clientType !== 'device' && auth.clientType !== 'api') return true
+  if (auth.scopes.includes('*')) return true
+  if (auth.scopes.includes(requiredScope)) return true
+
+  const [resource] = requiredScope.split(':')
+  return auth.scopes.includes(`${resource}:*`)
+}
+
+async function getBearerAuthContext(req: ExpressRequest) {
+  const bearerToken = getBearerToken(req)
+  if (!bearerToken) return { present: false, auth: null as AuthContext | null }
+
+  const tokenHash = hashSecret(bearerToken)
+  const apiToken = await prisma.apiToken.findUnique({
+    where: { tokenHash },
+    include: {
+      user: { select: { id: true, email: true, role: true, householdId: true } },
+      device: true,
+    },
+  })
+
+  const now = new Date()
+  if (!apiToken || apiToken.revokedAt || (apiToken.expiresAt && apiToken.expiresAt <= now)) {
+    return { present: true, auth: null as AuthContext | null }
+  }
+
+  if (apiToken.device && apiToken.device.status !== 'active') {
+    return { present: true, auth: null as AuthContext | null }
+  }
+
+  await prisma.apiToken.update({ where: { id: apiToken.id }, data: { lastUsedAt: now } }).catch(() => undefined)
+  if (apiToken.deviceId) {
+    await prisma.device.update({ where: { id: apiToken.deviceId }, data: { lastSeenAt: now } }).catch(() => undefined)
+  }
+
+  const householdId = apiToken.householdId ?? apiToken.device?.householdId ?? apiToken.user?.householdId ?? null
+  const userId = apiToken.userId ?? apiToken.user?.id ?? null
+  const email = apiToken.user?.email ?? null
+  const role = apiToken.user?.role ?? null
+  const clientType = apiToken.clientType === 'device' ? 'device' : 'api'
+
+  return {
+    present: true,
+    auth: {
+      token: null,
+      householdId,
+      userId,
+      email,
+      role,
+      scopes: parseScopes(apiToken.scopes),
+      clientType,
+      apiTokenId: apiToken.id,
+      deviceId: apiToken.deviceId,
+    } satisfies AuthContext,
+  }
+}
+
 export async function getAuthContext(req: ExpressRequest): Promise<AuthContext | null> {
+  const bearer = await getBearerAuthContext(req)
+  if (bearer.present) return bearer.auth
+
   const token = await getAuthToken(req)
   if (!token) return null
 
@@ -146,11 +277,11 @@ export async function getAuthContext(req: ExpressRequest): Promise<AuthContext |
   const role = typeof (token as any).role === 'string' ? String((token as any).role) : null
 
   if (householdIdFromToken) {
-    return { token, householdId: householdIdFromToken, userId, email, role }
+    return { token, householdId: householdIdFromToken, userId, email, role, scopes: ['*'], clientType: 'web' }
   }
 
   if (!email) {
-    return { token, householdId: null, userId, email: null, role }
+    return { token, householdId: null, userId, email: null, role, scopes: ['*'], clientType: 'web' }
   }
 
   const user = await prisma.user.findUnique({ where: { email }, select: { householdId: true, role: true } })
@@ -160,6 +291,8 @@ export async function getAuthContext(req: ExpressRequest): Promise<AuthContext |
     userId,
     email,
     role: role || (user?.role ?? null),
+    scopes: ['*'],
+    clientType: 'web',
   }
 }
 
@@ -167,6 +300,11 @@ export async function requireAuth(req: ExpressRequest, res: Response) {
   const auth = await getAuthContext(req)
   if (!auth) {
     res.status(401).json({ error: 'Unauthorized' })
+    return null
+  }
+  const requiredScope = requiredScopeForRequest(req)
+  if (!hasScope(auth, requiredScope)) {
+    res.status(403).json({ error: 'forbidden' })
     return null
   }
   return auth

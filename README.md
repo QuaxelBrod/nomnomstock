@@ -106,6 +106,7 @@ Important env vars for production:
 - `NEXT_PUBLIC_BASE_PATH` — if app is served under a subpath (e.g. `/nomnomstock`)
 - `BACKEND_URL` — internal API URL for frontend proxy (e.g. `http://backend:3001`)
 - `NEXT_PUBLIC_API_BASE` — optional frontend fallback (usually same as `BACKEND_URL`)
+- `API_BASE_URL` — public API v1 URL embedded in scanner pairing payloads (e.g. `https://api.example.tld/api/v1`)
 - Email / SMTP settings (for invites/activation)
 
 Note: The Dockerfile expects `emails/` to be copied into the runtime image so templates exist.

@@ -34,6 +34,7 @@ NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=change_me
 BACKEND_URL=http://localhost:3001
 NEXT_PUBLIC_API_BASE=http://localhost:3001
+API_BASE_URL=http://localhost:3001/api/v1
 DATABASE_URL=file:./data/nomnom.db
 UPLOAD_DIR=./data/uploads
 EMAIL_AUTH_ENABLED=false

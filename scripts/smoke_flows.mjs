@@ -76,9 +76,19 @@ function asStatusList(status) {
 
 async function request(
   pathname,
-  { method = 'GET', jar, json, form, body, expectedStatus = [200], base = apiBaseUrl, prefixApi = true } = {}
+  {
+    method = 'GET',
+    jar,
+    json,
+    form,
+    body,
+    headers: extraHeaders,
+    expectedStatus = [200],
+    base = apiBaseUrl,
+    prefixApi = true,
+  } = {}
 ) {
-  const headers = {}
+  const headers = { ...(extraHeaders || {}) }
   const cookieHeader = jar?.toHeader()
   if (cookieHeader) headers.cookie = cookieHeader
 
@@ -236,7 +246,9 @@ async function main() {
     expectedStatus: [200],
   })
   const productId = product.data?.id
+  const productBarcode = product.data?.barcode
   assert.ok(productId, 'product id missing')
+  assert.ok(productBarcode, 'product barcode missing')
 
   await request('/api/stock', {
     method: 'POST',
@@ -274,6 +286,59 @@ async function main() {
     jar: inviterJar,
     json: { quantity: 3, note: 'updated by smoke' },
     expectedStatus: [200],
+  })
+
+  step('Device pairing + bearer token flow')
+  const pairing = await request('/api/devices/pairing', {
+    method: 'POST',
+    jar: inviterJar,
+    json: {
+      name: `Smoke Scanner ${ts}`,
+      defaultLocationId: locationId,
+      defaultMode: 'stock_add',
+      ttlSeconds: 300,
+    },
+    expectedStatus: [200],
+  })
+  const pairingKey = pairing.data?.pairing?.key
+  assert.ok(pairingKey, 'pairing key missing')
+  assert.ok(String(pairing.data?.pairing?.qrPayload || '').includes(pairingKey), 'qr payload should include pairing key')
+
+  const paired = await request('/api/devices/pair', {
+    method: 'POST',
+    json: { pairingKey, device: { name: `ESP Scanner ${ts}`, type: 'esp-scanner' } },
+    expectedStatus: [200],
+  })
+  const bearerToken = paired.data?.token
+  assert.ok(bearerToken, 'device bearer token missing')
+  assert.equal(paired.data?.defaultLocationId, locationId, 'paired device default location mismatch')
+
+  await request('/api/locations', {
+    headers: { Authorization: `Bearer ${bearerToken}` },
+    expectedStatus: [200],
+  })
+
+  const scannerEvent = await request('/api/scanner/events', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${bearerToken}` },
+    json: { barcode: productBarcode, mode: 'lookup' },
+    expectedStatus: [200],
+  })
+  assert.ok(scannerEvent.data?.event?.id, 'scanner event id missing')
+  assert.equal(scannerEvent.data?.event?.productId, productId, 'scanner event product mismatch')
+
+  const pendingScannerEvents = await request('/api/scanner/events?status=pending', {
+    jar: inviterJar,
+    expectedStatus: [200],
+  })
+  assert.ok(
+    pendingScannerEvents.data?.events?.some((event) => event.id === scannerEvent.data.event.id),
+    'pending scanner event missing'
+  )
+
+  await request(`/api/profile?email=${encodeURIComponent(inviterEmail)}`, {
+    headers: { Authorization: `Bearer ${bearerToken}` },
+    expectedStatus: [403],
   })
 
   step('Recipes flow (available + generate)')

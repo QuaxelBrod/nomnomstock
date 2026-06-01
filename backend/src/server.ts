@@ -5,11 +5,13 @@ import bodyParser from 'body-parser'
 import { sendApiError } from './apiContract'
 import { registerAuthRoutes } from './routes/auth'
 import { registerDebugRoutes } from './routes/debug'
+import { registerDeviceRoutes } from './routes/devices'
 import { registerHealthRoutes } from './routes/health'
 import { registerLocationRoutes } from './routes/locations'
 import { registerProductRoutes } from './routes/products'
 import { registerProfileRoutes } from './routes/profile'
 import { registerRecipeRoutes } from './routes/recipes'
+import { registerScannerRoutes } from './routes/scanner'
 import { registerShoppingRoutes } from './routes/shopping'
 import { registerStockRoutes } from './routes/stock'
 import { resolveUploadsDir } from './serverUtils'
@@ -30,6 +32,8 @@ registerStockRoutes(app)
 registerShoppingRoutes(app)
 registerProfileRoutes(app)
 registerRecipeRoutes(app)
+registerDeviceRoutes(app)
+registerScannerRoutes(app)
 registerDebugRoutes(app)
 
 app.use('/api', (req, res) => {

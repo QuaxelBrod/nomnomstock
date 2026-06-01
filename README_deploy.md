@@ -31,10 +31,12 @@ Pflichtwerte in .env:
 Wichtige Vertragsvariablen für den Split:
 - BACKEND_URL
 - NEXT_PUBLIC_API_BASE
+- API_BASE_URL (public URL reachable by the ESP scanner, including `/api/v1`)
 
 Empfehlung in Compose:
 - BACKEND_URL=http://backend:3001
 - NEXT_PUBLIC_API_BASE=http://backend:3001
+- API_BASE_URL=https://example.tld/api/v1
 
 2) Build und Start
 ------------------
