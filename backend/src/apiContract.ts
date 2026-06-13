@@ -174,7 +174,7 @@ export const openApiDocument = {
         properties: {
           id: { type: 'integer' },
           barcode: { type: 'string' },
-          mode: { type: 'string', enum: ['lookup', 'stock_add', 'shopping_check'] },
+          mode: { type: 'string', enum: ['lookup', 'stock_add', 'stock_remove', 'shopping_check'] },
           source: { type: 'string' },
           status: { type: 'string', enum: ['pending', 'processed', 'ignored'] },
           note: { type: ['string', 'null'] },

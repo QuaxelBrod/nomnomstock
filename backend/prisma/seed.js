@@ -30,6 +30,14 @@ async function main() {
     create: { name: 'Default Household' },
   });
 
+  const defaultLocation = await prisma.location.findFirst({
+    where: { householdId: household.id, name: 'Vorrat' },
+  });
+
+  if (!defaultLocation) {
+    await prisma.location.create({ data: { householdId: household.id, name: 'Vorrat' } });
+  }
+
   const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
 
   const user = await prisma.user.upsert({

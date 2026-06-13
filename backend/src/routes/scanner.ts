@@ -1,12 +1,16 @@
 import type { Express } from 'express'
+import type { Prisma } from '@prisma/client'
 
 import { prisma } from '../../lib/prisma'
 import { apiRoute, sendApiError } from '../apiContract'
-import { parsePositiveInt, productLookup, requireAuth } from '../serverUtils'
+import { ensureDefaultLocation, parsePositiveInt, productLookup, requireAuth } from '../serverUtils'
+
+const SCANNER_MODES = ['lookup', 'stock_add', 'stock_remove', 'shopping_check'] as const
 
 function normalizeScannerMode(value: unknown) {
   const mode = String(value || 'lookup').trim()
-  return ['lookup', 'stock_add', 'shopping_check'].includes(mode) ? mode : 'lookup'
+  if (mode === 'stock_out' || mode === 'stock_reduce') return 'stock_remove'
+  return SCANNER_MODES.includes(mode as any) ? mode : 'lookup'
 }
 
 function normalizeScannerStatus(value: unknown) {
@@ -29,6 +33,76 @@ async function resolveEventLocation(locationId: number | null, householdId: numb
   return location
 }
 
+async function processStockAddEvent(eventId: number, productId: number, locationId: number, householdId: number, quantity: number) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const existing = await tx.stock.findFirst({
+      where: { productId, locationId, householdId },
+    })
+
+    if (existing) {
+      await tx.stock.update({
+        where: { id: existing.id },
+        data: { quantity: existing.quantity + quantity },
+      })
+    } else {
+      await tx.stock.create({
+        data: { productId, locationId, householdId, quantity },
+      })
+    }
+
+    await tx.history.create({
+      data: { productId, locationId, quantity, action: 'ADD', householdId },
+    })
+
+    return tx.scannerEvent.update({
+      where: { id: eventId },
+      data: { status: 'processed', processedAt: new Date(), note: null },
+      include: includeScannerEvent(),
+    })
+  })
+}
+
+async function processStockRemoveEvent(eventId: number, productId: number, locationId: number, householdId: number, quantity: number) {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const stock = await tx.stock.findFirst({
+      where: { productId, locationId, householdId },
+    })
+
+    if (!stock) {
+      return tx.scannerEvent.update({
+        where: { id: eventId },
+        data: { note: 'No matching stock in selected location' },
+        include: includeScannerEvent(),
+      })
+    }
+
+    if (stock.quantity < quantity) {
+      return tx.scannerEvent.update({
+        where: { id: eventId },
+        data: { note: 'Insufficient stock in selected location' },
+        include: includeScannerEvent(),
+      })
+    }
+
+    const remaining = stock.quantity - quantity
+    if (remaining <= 0) {
+      await tx.stock.delete({ where: { id: stock.id } })
+    } else {
+      await tx.stock.update({ where: { id: stock.id }, data: { quantity: remaining } })
+    }
+
+    await tx.history.create({
+      data: { productId, locationId, quantity, action: 'REMOVED', householdId },
+    })
+
+    return tx.scannerEvent.update({
+      where: { id: eventId },
+      data: { status: 'processed', processedAt: new Date(), note: null },
+      include: includeScannerEvent(),
+    })
+  })
+}
+
 export function registerScannerRoutes(app: Express) {
   app.post(apiRoute('/api/scanner/events'), async (req, res) => {
     try {
@@ -41,10 +115,12 @@ export function registerScannerRoutes(app: Express) {
 
       const device = auth.deviceId ? await prisma.device.findUnique({ where: { id: auth.deviceId } }) : null
       const requestedLocationId = parsePositiveInt(req.body?.locationId)
-      const defaultLocationId = requestedLocationId || device?.defaultLocationId || null
-      const location = await resolveEventLocation(defaultLocationId, auth.householdId)
+      const fallbackLocation = await ensureDefaultLocation(auth.householdId)
+      const effectiveLocationId = requestedLocationId || device?.defaultLocationId || fallbackLocation.id
+      const location = await resolveEventLocation(effectiveLocationId, auth.householdId)
       const mode = normalizeScannerMode(req.body?.mode || device?.defaultMode)
       const quantity = Number(req.body?.quantity || 1)
+      const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1
 
       const product = await productLookup(barcode).catch((err) => {
         console.error('scanner event product lookup error', err)
@@ -62,11 +138,27 @@ export function registerScannerRoutes(app: Express) {
           apiTokenId: auth.apiTokenId || undefined,
           productId: product?.id || undefined,
           locationId: location?.id || undefined,
-          quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+          quantity: safeQuantity,
           rawPayload: JSON.stringify(req.body || {}),
+          note:
+            (mode === 'stock_add' || mode === 'stock_remove') && !product
+              ? 'Product lookup failed'
+              : (mode === 'stock_add' || mode === 'stock_remove') && !location
+                ? 'Location not found'
+                : undefined,
         },
         include: includeScannerEvent(),
       })
+
+      if (product?.id && location?.id && mode === 'stock_add') {
+        const processed = await processStockAddEvent(event.id, product.id, location.id, auth.householdId, safeQuantity)
+        return res.json({ ok: true, event: processed })
+      }
+
+      if (product?.id && location?.id && mode === 'stock_remove') {
+        const processed = await processStockRemoveEvent(event.id, product.id, location.id, auth.householdId, safeQuantity)
+        return res.json({ ok: true, event: processed })
+      }
 
       return res.json({ ok: true, event })
     } catch (err) {

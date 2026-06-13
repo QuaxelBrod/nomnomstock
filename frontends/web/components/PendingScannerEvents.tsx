@@ -11,10 +11,12 @@ type ScannerEvent = {
   locationId?: number | null
   productId?: number | null
   createdAt?: string
+  note?: string | null
   product?: {
     name?: string
     brand?: string | null
     image?: string | null
+    barcode?: string | null
   } | null
   device?: {
     name?: string
@@ -24,6 +26,42 @@ type ScannerEvent = {
 type Location = {
   id: number
   name: string
+}
+
+type StockItem = {
+  id: number
+  productId: number
+  locationId: number
+  quantity: number
+  product?: {
+    barcode?: string | null
+  } | null
+  location?: {
+    id: number
+  } | null
+}
+
+const MODE_LABELS: Record<string, string> = {
+  lookup: 'Scan erfassen',
+  stock_add: 'Einbuchen',
+  stock_remove: 'Ausbuchen',
+  shopping_check: 'Einkauf pruefen',
+}
+
+const NOTE_LABELS: Record<string, string> = {
+  'Product lookup failed': 'Produkt konnte nicht gefunden werden',
+  'Location not found': 'Lager nicht gefunden',
+  'No matching stock in selected location': 'Kein passender Bestand in diesem Lager',
+  'Insufficient stock in selected location': 'Nicht genug Bestand in diesem Lager',
+}
+
+function modeLabel(mode: string) {
+  return MODE_LABELS[mode] || mode
+}
+
+function noteLabel(note?: string | null) {
+  if (!note) return null
+  return NOTE_LABELS[note] || note
 }
 
 export default function PendingScannerEvents({ fallbackLocationId }: { fallbackLocationId?: number | null }) {
@@ -140,6 +178,48 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
     }
   }
 
+  const removeFromStock = async (event: ScannerEvent) => {
+    const locationId = Number(selectedLocations[event.id] || event.locationId || fallbackLocationId || 0)
+    if (!locationId) {
+      setError('Bitte zuerst ein Lager auswaehlen')
+      return
+    }
+    const quantity = Number(quantities[event.id] || event.quantity || 1)
+    const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1
+
+    setBusyId(event.id)
+    setError(null)
+    try {
+      const stockRes = await fetch(`${base}/api/stock`)
+      if (!stockRes.ok) throw new Error('stock_load_failed')
+      const stockBody = await stockRes.json()
+      const stocks: StockItem[] = Array.isArray(stockBody) ? stockBody : []
+      const stock = stocks.find((item) => {
+        const sameProduct = event.productId ? item.productId === event.productId : item.product?.barcode === event.barcode
+        const itemLocationId = item.locationId || item.location?.id
+        return sameProduct && itemLocationId === locationId
+      })
+
+      if (!stock) throw new Error('stock_not_found')
+      if (Number(stock.quantity) < safeQuantity) throw new Error('stock_quantity_low')
+
+      const res = await fetch(`${base}/api/stock/${stock.id}/reduce`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: safeQuantity }),
+      })
+      if (!res.ok) throw new Error('stock_remove_failed')
+      await patchEvent(event.id, { status: 'processed', locationId })
+      await loadEvents()
+    } catch (err: any) {
+      if (err?.message === 'stock_not_found') setError('Kein passender Bestand in diesem Lager')
+      else if (err?.message === 'stock_quantity_low') setError('Nicht genug Bestand in diesem Lager')
+      else setError('Scan konnte nicht ausgebucht werden')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   if (!events.length && !error) return null
 
   return (
@@ -167,10 +247,11 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
                   {event.product?.name || event.barcode}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {event.device?.name || 'Scanner'} - {event.barcode}
+                  {event.device?.name || 'Scanner'} - {event.barcode} - {modeLabel(event.mode)}
                 </div>
+                {event.note && <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">{noteLabel(event.note)}</div>}
               </div>
-              <div className="grid gap-2 sm:grid-cols-[minmax(11rem,1fr)_5rem_auto_auto] sm:items-center">
+              <div className="grid gap-2 sm:grid-cols-[minmax(11rem,1fr)_5rem_auto_auto_auto] sm:items-center">
                 <select
                   value={selectedLocations[event.id] || ''}
                   onChange={(changeEvent) =>
@@ -194,14 +275,44 @@ export default function PendingScannerEvents({ fallbackLocationId }: { fallbackL
                   className="text-sm text-black dark:bg-gray-800 dark:text-white"
                   aria-label="Menge"
                 />
-                <button
-                  type="button"
-                  disabled={busyId === event.id}
-                  onClick={() => addToStock(event)}
-                  className="action-fullmobile rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:opacity-60"
-                >
-                  Einbuchen
-                </button>
+                {event.mode === 'stock_remove' ? (
+                  <button
+                    type="button"
+                    disabled={busyId === event.id}
+                    onClick={() => removeFromStock(event)}
+                    className="action-fullmobile rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:opacity-60"
+                  >
+                    Ausbuchen
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busyId === event.id}
+                    onClick={() => addToStock(event)}
+                    className="action-fullmobile rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:opacity-60"
+                  >
+                    Einbuchen
+                  </button>
+                )}
+                {event.mode === 'stock_remove' ? (
+                  <button
+                    type="button"
+                    disabled={busyId === event.id}
+                    onClick={() => addToStock(event)}
+                    className="action-fullmobile rounded border px-3 py-1 text-sm dark:border-gray-700 disabled:opacity-60"
+                  >
+                    Einbuchen
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busyId === event.id}
+                    onClick={() => removeFromStock(event)}
+                    className="action-fullmobile rounded border px-3 py-1 text-sm dark:border-gray-700 disabled:opacity-60"
+                  >
+                    Ausbuchen
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={busyId === event.id}

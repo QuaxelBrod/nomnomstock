@@ -355,12 +355,29 @@ export async function createHouseholdForUser(email: string, name?: string | null
     const existing = await prisma.household.findUnique({ where: { name: candidate } })
     if (!existing) {
       const household = await prisma.household.create({ data: { name: candidate } })
+      await ensureDefaultLocation(household.id)
       return household.id
     }
   }
 
   const household = await prisma.household.create({ data: { name: `Haushalt ${Date.now()}` } })
+  await ensureDefaultLocation(household.id)
   return household.id
+}
+
+export const DEFAULT_LOCATION_NAME = 'Vorrat'
+
+export async function ensureDefaultLocation(householdId: number) {
+  const existing = await prisma.location.findFirst({
+    where: { householdId, name: DEFAULT_LOCATION_NAME },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  if (existing) return existing
+
+  return prisma.location.create({
+    data: { name: DEFAULT_LOCATION_NAME, householdId },
+  })
 }
 
 export async function callOllama(prompt: string) {

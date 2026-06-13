@@ -36,13 +36,26 @@ type Location = {
   name: string
 }
 
+type ScannerMode = 'lookup' | 'stock_add' | 'stock_remove' | 'shopping_check'
+
+const SCANNER_MODE_LABELS: Record<ScannerMode, string> = {
+  lookup: 'Scan erfassen',
+  stock_add: 'Einbuchen',
+  stock_remove: 'Ausbuchen',
+  shopping_check: 'Einkauf pruefen',
+}
+
+function scannerModeLabel(mode: string) {
+  return SCANNER_MODE_LABELS[mode as ScannerMode] || mode
+}
+
 export default function ScannerPairingPanel() {
   const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
   const [locations, setLocations] = useState<Location[]>([])
   const [devices, setDevices] = useState<Device[]>([])
   const [name, setName] = useState('ESP Scanner')
   const [defaultLocationId, setDefaultLocationId] = useState('')
-  const [defaultMode, setDefaultMode] = useState<'lookup' | 'stock_add'>('lookup')
+  const [defaultMode, setDefaultMode] = useState<ScannerMode>('lookup')
   const [pairing, setPairing] = useState<Pairing | null>(null)
   const [rotatedToken, setRotatedToken] = useState<RotatedToken | null>(null)
   const [busyDeviceId, setBusyDeviceId] = useState<number | null>(null)
@@ -160,11 +173,13 @@ export default function ScannerPairingPanel() {
         <div className="sm:col-span-3">
           <select
             value={defaultMode}
-            onChange={(event) => setDefaultMode(event.target.value as 'lookup' | 'stock_add')}
+            onChange={(event) => setDefaultMode(event.target.value as ScannerMode)}
             className="max-w-xs text-black dark:bg-gray-800 dark:text-white"
           >
-            <option value="lookup">Modus: Nur erfassen</option>
-            <option value="stock_add">Modus: Einbuchen vorbereiten</option>
+            <option value="lookup">Modus: {SCANNER_MODE_LABELS.lookup}</option>
+            <option value="stock_add">Modus: {SCANNER_MODE_LABELS.stock_add}</option>
+            <option value="stock_remove">Modus: {SCANNER_MODE_LABELS.stock_remove}</option>
+            <option value="shopping_check">Modus: {SCANNER_MODE_LABELS.shopping_check}</option>
           </select>
         </div>
       </form>
@@ -211,7 +226,7 @@ export default function ScannerPairingPanel() {
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">{device.name}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {device.status} - {device.type} - {device.defaultMode}
+                  {device.status} - {device.type} - {scannerModeLabel(device.defaultMode)}
                 </div>
               </div>
               {device.status === 'active' && (

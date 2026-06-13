@@ -2,7 +2,7 @@ import type { Express } from 'express'
 
 import { prisma } from '../../lib/prisma'
 import { apiRoute } from '../apiContract'
-import { parsePositiveInt, requireAuth } from '../serverUtils'
+import { ensureDefaultLocation, parsePositiveInt, requireAuth } from '../serverUtils'
 
 export function registerLocationRoutes(app: Express) {
   app.get(apiRoute('/api/locations'), async (req, res) => {
@@ -17,6 +17,8 @@ export function registerLocationRoutes(app: Express) {
 
       const householdId = requestedHousehold || auth.householdId || null
       if (!householdId) return res.json([])
+
+      await ensureDefaultLocation(householdId)
 
       const locations = await prisma.location.findMany({
         where: { householdId },
@@ -46,6 +48,7 @@ export function registerLocationRoutes(app: Express) {
       if (!householdId) return res.status(400).json({ error: 'householdId required' })
 
       const location = await prisma.location.create({ data: { name, householdId } })
+      await ensureDefaultLocation(householdId)
       return res.json(location)
     } catch (err) {
       console.error('POST /api/locations error', err)
@@ -67,6 +70,7 @@ export function registerLocationRoutes(app: Express) {
       if (auth.householdId && existing.householdId !== auth.householdId) return res.status(404).json({ error: 'not found' })
 
       const updated = await prisma.location.update({ where: { id }, data: { name } })
+      if (existing.householdId) await ensureDefaultLocation(existing.householdId)
       return res.json(updated)
     } catch (err) {
       console.error('PATCH /api/locations/:id error', err)
@@ -87,6 +91,7 @@ export function registerLocationRoutes(app: Express) {
       if (auth.householdId && existing.householdId !== auth.householdId) return res.status(404).json({ error: 'not found' })
 
       await prisma.location.delete({ where: { id } })
+      if (existing.householdId) await ensureDefaultLocation(existing.householdId)
       return res.json({ ok: true })
     } catch (err) {
       console.error('DELETE /api/locations/:id error', err)

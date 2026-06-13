@@ -102,7 +102,7 @@ NextAuth browser endpoints stay under `/api/auth/*` and are not part of the exte
   - Response: `{ "devices": Device[] }`
 - `POST /api/v1/devices/pairing`
   - Auth: web session
-  - Body: `{ "name"?: "Kueche Scanner", "type"?: "scanner", "defaultLocationId"?: 1, "defaultMode"?: "lookup" | "stock_add" | "shopping_check", "ttlSeconds"?: 600, "scopes"?: string[] }`
+  - Body: `{ "name"?: "Kueche Scanner", "type"?: "scanner", "defaultLocationId"?: 1, "defaultMode"?: "lookup" | "stock_add" | "stock_remove" | "shopping_check", "ttlSeconds"?: 600, "scopes"?: string[] }`
   - Response includes:
     - `key`: short-lived one-time pairing key for 1D barcode
     - `apiBase`: API base URL ending in `/api/v1`
@@ -124,9 +124,10 @@ NextAuth browser endpoints stay under `/api/auth/*` and are not part of the exte
 
 - `POST /api/v1/scanner/events`
   - Auth: device bearer token with `scanner:write`
-  - Body: `{ "barcode": "...", "mode"?: "lookup" | "stock_add" | "shopping_check", "locationId"?: 1, "quantity"?: 1 }`
+  - Body: `{ "barcode": "...", "mode"?: "lookup" | "stock_add" | "stock_remove" | "shopping_check", "locationId"?: 1, "quantity"?: 1 }`
   - Response: `{ "ok": true, "event": ScannerEvent }`
-  - The event is stored as `pending`; web clients decide how to process it.
+  - `locationId` overrides the device default location for this scan; omit it to use the paired scanner default.
+  - `stock_add` and `stock_remove` are processed directly when product, location, and stock state are valid; otherwise the event stays `pending`.
 - `GET /api/v1/scanner/events?status=pending`
   - Auth: web session
   - Response: `{ "events": ScannerEvent[] }`

@@ -14,6 +14,7 @@ import {
 } from '../serverUtils'
 
 const DEFAULT_DEVICE_SCOPES = ['scanner:write', 'product:lookup', 'stock:add', 'location:read']
+const DEVICE_MODES = ['lookup', 'stock_add', 'stock_remove', 'shopping_check'] as const
 const ALLOWED_DEVICE_SCOPES = new Set([
   ...DEFAULT_DEVICE_SCOPES,
   'product:read',
@@ -28,7 +29,8 @@ function normalizePairingKey(value: unknown) {
 
 function normalizeDeviceMode(value: unknown) {
   const mode = String(value || 'lookup').trim()
-  return ['lookup', 'stock_add', 'shopping_check'].includes(mode) ? mode : 'lookup'
+  if (mode === 'stock_out' || mode === 'stock_reduce') return 'stock_remove'
+  return DEVICE_MODES.includes(mode as any) ? mode : 'lookup'
 }
 
 function normalizeDeviceType(value: unknown) {
