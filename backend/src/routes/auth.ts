@@ -197,6 +197,100 @@ export function registerAuthRoutes(app: Express) {
     }
   })
 
+  app.post(apiRoute('/api/auth/password/forgot'), async (req, res) => {
+    try {
+      const authUrl = resolveAuthUrl()
+      await ensurePasswordColumn()
+      await ensureVerificationTokenTable()
+
+      const email = normalizeEmail(req.body?.email)
+      const genericResponse = {
+        ok: true,
+        message: 'Falls diese E-Mail registriert ist, wurde ein Link zum Zuruecksetzen des Passworts versendet.',
+      }
+      if (!email) return res.json(genericResponse)
+
+      const user = await prisma.user.findUnique({ where: { email } })
+      if (!user || !(user as any).isActive) return res.json(genericResponse)
+
+      const recentToken = await prisma.verificationToken.findFirst({
+        where: {
+          email,
+          type: 'password-reset',
+          createdAt: { gt: new Date(Date.now() - 1000 * 60 * 5) },
+        } as any,
+        orderBy: { createdAt: 'desc' },
+      })
+      if (recentToken) return res.json(genericResponse)
+
+      await prisma.verificationToken.deleteMany({
+        where: { email, type: 'password-reset' } as any,
+      })
+
+      const token = randomBytes(32).toString('hex')
+      await prisma.verificationToken.create({
+        data: {
+          email,
+          token,
+          type: 'password-reset',
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        },
+      })
+
+      try {
+        const tpl = getEmailTemplate('password-reset.txt')
+        const resetUrl = `${authUrl}/auth/reset-password?token=${token}`
+        const text = renderTemplate(tpl, {
+          name: user.name || user.email,
+          resetUrl,
+          homeUrl: `${authUrl}/`,
+        })
+        await sendMail({ to: email, subject: 'Passwort zuruecksetzen', text })
+      } catch (mailErr) {
+        console.error('password reset mail error', mailErr)
+      }
+
+      return res.json(genericResponse)
+    } catch (err) {
+      console.error('POST /api/auth/password/forgot error', err)
+      return res.status(500).json({ error: 'server_error' })
+    }
+  })
+
+  app.post(apiRoute('/api/auth/password/reset'), async (req, res) => {
+    try {
+      await ensurePasswordColumn()
+      await ensureVerificationTokenTable()
+
+      const token = String(req.body?.token || '').trim()
+      const password = String(req.body?.password || '')
+      if (!token || password.length < 8) return res.status(400).json({ error: 'invalid_request' })
+
+      const row = await prisma.verificationToken.findUnique({ where: { token } as any })
+      if (!row || row.type !== 'password-reset' || (row.expiresAt && row.expiresAt <= new Date())) {
+        return res.status(400).json({ error: 'invalid_or_expired_token' })
+      }
+
+      const user = await prisma.user.findUnique({ where: { email: row.email } })
+      if (!user || !(user as any).isActive) {
+        await prisma.verificationToken.delete({ where: { token } as any }).catch(() => null)
+        return res.status(400).json({ error: 'invalid_or_expired_token' })
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10)
+      await prisma.user.update({
+        where: { email: row.email },
+        data: { password: passwordHash } as any,
+      })
+      await prisma.verificationToken.delete({ where: { token } as any })
+
+      return res.json({ ok: true })
+    } catch (err) {
+      console.error('POST /api/auth/password/reset error', err)
+      return res.status(500).json({ error: 'server_error' })
+    }
+  })
+
   app.post(apiRoute('/api/auth/invite'), async (req, res) => {
     try {
       const authUrl = resolveAuthUrl()

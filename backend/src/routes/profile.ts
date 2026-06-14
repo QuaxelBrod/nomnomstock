@@ -2,9 +2,10 @@ import type { Express } from 'express'
 import fs from 'fs'
 import path from 'path'
 import multer from 'multer'
+import bcrypt from 'bcryptjs'
 
 import { prisma } from '../../lib/prisma'
-import { ensureImageColumn } from '../../lib/dbFixes'
+import { ensureImageColumn, ensurePasswordColumn } from '../../lib/dbFixes'
 import { apiRoute } from '../apiContract'
 import { isAdmin, normalizeEmail, requireAuth, resolveUploadsDir, type RequestWithFile } from '../serverUtils'
 
@@ -81,6 +82,41 @@ export function registerProfileRoutes(app: Express) {
       return res.json({ ok: true, image: imagePath || null })
     } catch (err) {
       console.error('POST /api/profile error', err)
+      return res.status(500).json({ error: 'server error' })
+    }
+  })
+
+  app.post(apiRoute('/api/profile/password'), async (req, res) => {
+    try {
+      const auth = await requireAuth(req, res)
+      if (!auth) return
+
+      const currentPassword = String(req.body?.currentPassword || '')
+      const newPassword = String(req.body?.newPassword || '')
+      if (!currentPassword || newPassword.length < 8) {
+        return res.status(400).json({ error: 'invalid_request' })
+      }
+
+      await ensurePasswordColumn()
+
+      const user = auth.userId
+        ? await prisma.user.findUnique({ where: { id: auth.userId } })
+        : auth.email
+          ? await prisma.user.findUnique({ where: { email: auth.email.toLowerCase() } })
+          : null
+
+      if (!user) return res.status(404).json({ error: 'not_found' })
+      const hash = (user as any).password
+      if (!hash) return res.status(400).json({ error: 'password_not_set' })
+
+      const valid = await bcrypt.compare(currentPassword, hash)
+      if (!valid) return res.status(400).json({ error: 'invalid_current_password' })
+
+      const nextHash = await bcrypt.hash(newPassword, 10)
+      await prisma.user.update({ where: { id: user.id }, data: { password: nextHash } as any })
+      return res.json({ ok: true })
+    } catch (err) {
+      console.error('POST /api/profile/password error', err)
       return res.status(500).json({ error: 'server error' })
     }
   })

@@ -21,6 +21,8 @@ const PUBLIC_EXACT_PATHS_BASELESS = ['/api/devices/pair', '/api/v1/devices/pair'
 const PUBLIC_PATHS_BASELESS = [
   '/auth/login',
   '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/auth/activated',
   '/auth/approval',
   '/api/auth',

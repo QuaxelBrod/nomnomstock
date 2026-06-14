@@ -18,6 +18,12 @@ export default function ProfilPage() {
   const [inviteStatus, setInviteStatus] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviting, setInviting] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [changingPassword, setChangingPassword] = useState(false)
   const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
   useEffect(() => {
@@ -143,6 +149,44 @@ export default function ProfilPage() {
     }
   }
 
+  const onChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordStatus(null)
+    setPasswordError(null)
+
+    if (newPassword.length < 8) {
+      setPasswordError('Das neue Passwort muss mindestens 8 Zeichen lang sein.')
+      return
+    }
+    if (newPassword !== newPasswordConfirm) {
+      setPasswordError('Die neuen Passwoerter stimmen nicht ueberein.')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      const res = await fetch(`${base}/api/profile/password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        if (data?.error === 'invalid_current_password') throw new Error('Das aktuelle Passwort ist falsch.')
+        if (data?.error === 'password_not_set') throw new Error('Fuer diesen Account ist noch kein Passwort gesetzt.')
+        throw new Error('Das Passwort konnte nicht geaendert werden.')
+      }
+      setPasswordStatus('Passwort geaendert')
+      setCurrentPassword('')
+      setNewPassword('')
+      setNewPasswordConfirm('')
+    } catch (err: any) {
+      setPasswordError(err?.message || 'Das Passwort konnte nicht geaendert werden.')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   return (
     <main className="p-4 sm:p-6 max-w-3xl mx-auto">
       <h2 className="text-2xl sm:text-3xl font-semibold mb-4">Profil</h2>
@@ -185,6 +229,38 @@ export default function ProfilPage() {
             </div>
             {inviteStatus && <div className="mt-2 text-sm text-green-700 dark:text-green-400">{inviteStatus}</div>}
             {inviteError && <div className="mt-2 text-sm text-red-600">{inviteError}</div>}
+          </form>
+
+          <form onSubmit={onChangePassword} className="mt-6 max-w-md">
+            <h3 className="text-sm font-medium mb-2">Passwort aendern</h3>
+            <div className="space-y-2">
+              <input
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Aktuelles Passwort"
+                type="password"
+                className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+              />
+              <input
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Neues Passwort"
+                type="password"
+                className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+              />
+              <input
+                value={newPasswordConfirm}
+                onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                placeholder="Neues Passwort wiederholen"
+                type="password"
+                className="w-full p-2 border rounded text-black dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
+            <button type="submit" disabled={changingPassword} className="action-fullmobile mt-2 px-4 py-2 bg-blue-600 text-white rounded">
+              {changingPassword ? 'Speichere...' : 'Passwort aendern'}
+            </button>
+            {passwordStatus && <div className="mt-2 text-sm text-green-700 dark:text-green-400">{passwordStatus}</div>}
+            {passwordError && <div className="mt-2 text-sm text-red-600">{passwordError}</div>}
           </form>
 
           <form onSubmit={onSave} className="mt-6 max-w-md">

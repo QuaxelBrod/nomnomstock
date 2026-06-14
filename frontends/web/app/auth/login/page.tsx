@@ -80,7 +80,10 @@ export default function LoginPage() {
         {error && <div className="text-red-600">{error}</div>}
         <button className="action-fullmobile px-3 py-2 bg-blue-600 text-white rounded">Login</button>
       </form>
-      <p className="mt-3 text-sm">Noch keinen Account? <Link href="/auth/register" className="text-blue-600">Registrieren</Link></p>
+      <div className="mt-3 space-y-2 text-sm">
+        <p>Noch keinen Account? <Link href="/auth/register" className="text-blue-600">Registrieren</Link></p>
+        <p><Link href="/auth/forgot-password" className="text-blue-600">Passwort vergessen?</Link></p>
+      </div>
     </main>
   )
 }
