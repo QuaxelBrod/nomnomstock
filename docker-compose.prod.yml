@@ -48,7 +48,7 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    command: pnpm --filter nomnomstock-web run start -- --hostname 0.0.0.0 --port 3000
+    command: pnpm --filter nomnomstock-web exec next start --hostname 0.0.0.0 --port 3000
     environment:
       NODE_ENV: production
       APP_URL: ${APP_URL:-http://localhost:3000}

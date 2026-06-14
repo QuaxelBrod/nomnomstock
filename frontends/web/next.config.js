@@ -4,15 +4,20 @@ require('./lib/env.js')
 
 /** @type {import('next').NextConfig} */
 // Determine a basePath for deployments that run the app under a sub-path
-const rawAppUrl = process.env.APP_URL || 'http://localhost:3000'
 let basePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
-try {
-  if (!basePath) {
-    const u = new URL(rawAppUrl)
-    if (u.pathname && u.pathname !== '/') basePath = u.pathname.replace(/\/$/, '')
+if (!basePath) {
+  const urls = [process.env.APP_URL, process.env.NEXTAUTH_URL].filter(Boolean)
+  for (const raw of urls) {
+    try {
+      const u = new URL(raw)
+      if (u.pathname && u.pathname !== '/') {
+        basePath = u.pathname.replace(/\/$/, '')
+        break
+      }
+    } catch (e) {
+      // ignore invalid deployment URL
+    }
   }
-} catch (e) {
-  // ignore invalid APP_URL
 }
 
 // normalize: ensure basePath starts with '/' or is empty
