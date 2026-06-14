@@ -32,11 +32,15 @@ Wichtige Vertragsvariablen für den Split:
 - BACKEND_URL
 - NEXT_PUBLIC_API_BASE
 - API_BASE_URL (public URL reachable by the ESP scanner, including `/api/v1`)
+- LLM_PROVIDER / LLM_BASE_URL / LLM_MODEL für lokale OpenAI-kompatible Server wie llama.cpp
+- OLLAMA_URL / OLLAMA_MODEL nur für Ollama
 
 Empfehlung in Compose:
 - BACKEND_URL=http://backend:3001
 - NEXT_PUBLIC_API_BASE=http://backend:3001
 - API_BASE_URL=https://example.tld/api/v1
+- LLM_PROVIDER=openai
+- LLM_BASE_URL=http://host-or-ip:11433
 
 2) Build und Start
 ------------------

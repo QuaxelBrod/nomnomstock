@@ -4,7 +4,7 @@ import fs from 'fs'
 import { prisma } from '../../lib/prisma'
 import { renderTemplate, sendMail } from '../../lib/mail'
 import { apiRoute } from '../apiContract'
-import { buildHouseholdScope, callOllama, isTruthy, requireAuth, resolvePromptTemplatePath } from '../serverUtils'
+import { buildHouseholdScope, callLanguageModel, isLanguageModelConfigured, requireAuth, resolvePromptTemplatePath } from '../serverUtils'
 
 export function registerRecipeRoutes(app: Express) {
   app.get(apiRoute('/api/recipes/available'), async (req, res) => {
@@ -54,17 +54,15 @@ export function registerRecipeRoutes(app: Express) {
         user_input: userInput || 'keine speziellen Wünsche',
       })
 
-      const ollamaEnabledRaw = process.env.OLLAMA_ENABLED
-      const enabled = typeof ollamaEnabledRaw === 'undefined' ? true : isTruthy(ollamaEnabledRaw)
-      if (!enabled || !process.env.OLLAMA_URL) {
+      if (!isLanguageModelConfigured()) {
         return res.status(503).json({ recipe: 'Chat nicht verfügbar' })
       }
 
       try {
-        const recipe = await callOllama(prompt)
+        const recipe = await callLanguageModel(prompt)
         return res.json({ recipe })
       } catch (err) {
-        console.error('POST /api/recipes/generate ollama error', err)
+        console.error('POST /api/recipes/generate llm error', err)
         return res.status(503).json({ recipe: 'Chat nicht verfügbar' })
       }
     } catch (err) {

@@ -380,27 +380,59 @@ export async function ensureDefaultLocation(householdId: number) {
   })
 }
 
-export async function callOllama(prompt: string) {
-  const url = process.env.OLLAMA_URL
-  const model = process.env.OLLAMA_MODEL || 'cortex'
-  if (!url) throw new Error('OLLAMA_URL not configured')
+function envNumber(name: string, fallback: number) {
+  const parsed = Number(process.env[name])
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
 
-  const full = `${url.replace(/\/$/, '')}/api/generate`
-  const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 60000)
+function llmProvider() {
+  const explicit = (process.env.LLM_PROVIDER || '').trim().toLowerCase()
+  if (explicit) return explicit
+  if (process.env.LLM_BASE_URL) return 'openai'
+  return 'ollama'
+}
+
+function openAiPath(baseUrl: string, pathName: string) {
+  const base = baseUrl.replace(/\/$/, '')
+  return base.endsWith('/v1') ? `${base}${pathName}` : `${base}/v1${pathName}`
+}
+
+export function isLanguageModelConfigured() {
+  const enabledRaw = process.env.LLM_ENABLED ?? process.env.OLLAMA_ENABLED
+  const enabled = typeof enabledRaw === 'undefined' ? true : isTruthy(enabledRaw)
+  if (!enabled) return false
+  return Boolean(process.env.LLM_BASE_URL || process.env.OLLAMA_URL)
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
-  let response: globalThis.Response
   try {
-    response = await fetch(full, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, prompt }),
-      signal: controller.signal,
-    })
+    return await fetch(url, { ...init, signal: controller.signal })
   } finally {
     clearTimeout(timeoutId)
   }
+}
+
+async function callOllamaGenerate(prompt: string) {
+  const url = process.env.OLLAMA_URL
+  const model = process.env.OLLAMA_MODEL || process.env.LLM_MODEL || 'cortex'
+  if (!url) throw new Error('OLLAMA_URL not configured')
+
+  const full = `${url.replace(/\/$/, '')}/api/generate`
+  const timeoutMs = envNumber('LLM_TIMEOUT_MS', envNumber('OLLAMA_TIMEOUT_MS', 60000))
+  const temperature = process.env.LLM_TEMPERATURE || process.env.OLLAMA_TEMPERATURE
+  const maxTokens = process.env.LLM_MAX_TOKENS || process.env.OLLAMA_MAX_TOKENS
+  const options: Record<string, number> = {}
+  if (temperature) options.temperature = Number(temperature)
+  if (maxTokens) options.num_predict = Number(maxTokens)
+
+  const response = await fetchWithTimeout(full, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, prompt, stream: false, ...(Object.keys(options).length ? { options } : {}) }),
+  }, timeoutMs)
 
   if (!response.ok) {
     const errText = await response.text().catch(() => '')
@@ -427,4 +459,71 @@ export async function callOllama(prompt: string) {
       .join('')
     return chunks || text
   }
+}
+
+async function resolveOpenAiCompatibleModel(baseUrl: string, timeoutMs: number) {
+  const explicit = process.env.LLM_MODEL || process.env.OPENAI_MODEL
+  if (explicit) return explicit
+
+  try {
+    const headers: Record<string, string> = {}
+    if (process.env.LLM_API_KEY) headers.Authorization = `Bearer ${process.env.LLM_API_KEY}`
+    const response = await fetchWithTimeout(openAiPath(baseUrl, '/models'), { headers }, Math.min(timeoutMs, 5000))
+    if (response.ok) {
+      const parsed = await response.json().catch(() => null)
+      const id = parsed?.data?.[0]?.id
+      if (id) return String(id)
+    }
+  } catch {
+    // Some local llama.cpp servers accept any model id or do not expose /v1/models.
+  }
+
+  return 'local-model'
+}
+
+async function callOpenAiCompatibleChat(prompt: string) {
+  const baseUrl = process.env.LLM_BASE_URL
+  if (!baseUrl) throw new Error('LLM_BASE_URL not configured')
+
+  const timeoutMs = envNumber('LLM_TIMEOUT_MS', envNumber('OLLAMA_TIMEOUT_MS', 60000))
+  const model = await resolveOpenAiCompatibleModel(baseUrl, timeoutMs)
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (process.env.LLM_API_KEY) headers.Authorization = `Bearer ${process.env.LLM_API_KEY}`
+
+  const response = await fetchWithTimeout(openAiPath(baseUrl, '/chat/completions'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model,
+      stream: false,
+      messages: [
+        { role: 'system', content: 'Du bist ein hilfreicher Kochassistent. Antworte auf Deutsch.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: envNumber('LLM_TEMPERATURE', envNumber('OLLAMA_TEMPERATURE', 0.7)),
+      max_tokens: envNumber('LLM_MAX_TOKENS', envNumber('OLLAMA_MAX_TOKENS', 1024)),
+    }),
+  }, timeoutMs)
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '')
+    throw new Error(`LLM request failed${errText ? `: ${errText.slice(0, 200)}` : ''}`)
+  }
+
+  const parsed = await response.json().catch(() => null)
+  const content = parsed?.choices?.[0]?.message?.content || parsed?.choices?.[0]?.text
+  if (content) return String(content)
+  return JSON.stringify(parsed)
+}
+
+export async function callLanguageModel(prompt: string) {
+  const provider = llmProvider()
+  if (['openai', 'llama', 'llama_cpp', 'llama-cpp'].includes(provider)) {
+    return callOpenAiCompatibleChat(prompt)
+  }
+  return callOllamaGenerate(prompt)
+}
+
+export async function callOllama(prompt: string) {
+  return callOllamaGenerate(prompt)
 }
