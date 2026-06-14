@@ -25,6 +25,7 @@ cp .env.example .env
 
 Pflichtwerte in .env:
 - NEXTAUTH_SECRET
+- ADMIN_MAINTENANCE_TOKEN (fuer lokale Reparaturkonsole)
 - APP_URL
 - NEXTAUTH_URL
 
@@ -86,7 +87,34 @@ docker compose -f docker-compose.prod.yml logs -f backend web
 docker compose -f docker-compose.prod.yml ps
 ```
 
-7) Häufige Fehler
+7) Lokale Admin-/Maintenance-Konsole
+------------------------------------
+
+Die Backend-Admin-Konsole ist nicht fuer nginx gedacht. In Production bindet Compose
+den Backend-Port an die konfigurierte Admin-IP:
+
+```sh
+http://192.168.178.29:8070/admin
+```
+
+Setze vorher einen starken Token:
+
+```sh
+ADMIN_MAINTENANCE_TOKEN=<openssl-rand-base64-32>
+ADMIN_MAINTENANCE_BIND_IP=192.168.178.29
+ADMIN_MAINTENANCE_PORT=8070
+```
+
+Alternativ nur lokal binden und per SSH-Tunnel oeffnen:
+
+```sh
+ADMIN_MAINTENANCE_BIND_IP=127.0.0.1
+ssh -L 8070:127.0.0.1:8070 user@server
+```
+
+Danach lokal im Browser `http://127.0.0.1:8070/admin` aufrufen.
+
+8) Häufige Fehler
 -----------------
 - Frontend erreicht API nicht:
 	- BACKEND_URL/NEXT_PUBLIC_API_BASE prüfen (intern auf http://backend:3001)

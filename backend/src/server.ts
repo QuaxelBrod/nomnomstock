@@ -3,6 +3,7 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 
 import { sendApiError } from './apiContract'
+import { registerAdminMaintenanceRoutes } from './routes/adminMaintenance'
 import { registerAuthRoutes } from './routes/auth'
 import { registerDebugRoutes } from './routes/debug'
 import { registerDeviceRoutes } from './routes/devices'
@@ -24,6 +25,7 @@ app.use(bodyParser.json({ limit: '10mb' }))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use('/uploads', express.static(resolveUploadsDir()))
 
+registerAdminMaintenanceRoutes(app)
 registerHealthRoutes(app)
 registerAuthRoutes(app)
 registerProductRoutes(app)
