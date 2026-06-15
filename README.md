@@ -117,6 +117,11 @@ Important env vars for production:
 - `OFFERS_VISION_ENABLED` — enables the local vision extraction hook, default `false`
 - `OFFERS_VISION_BASE_URL` — optional local OpenAI-compatible vision endpoint
 - `OFFERS_VISION_MODEL` — optional local vision model name
+- `OFFERS_IMAGE_LOOKUP_ENABLED` — enriches missing offer images through Open Food Facts and Open Beauty Facts, default `true`
+- `OFFERS_IMAGE_LOOKUP_MAX_PER_REFRESH` — maximum external image-search requests per refresh, default `10`
+- `OFFERS_IMAGE_LOOKUP_DELAY_MS` — delay between image-search requests, default `6500`
+- `OFFERS_IMAGE_LOOKUP_TIMEOUT_MS` — timeout for one image-search request, default `5000`
+- `OFFERS_IMAGE_LOOKUP_USER_AGENT` — optional custom User-Agent for catalog lookups
 - Email / SMTP settings (for invites/activation)
 
 Note: The Dockerfile expects `emails/` to be copied into the runtime image so templates exist.

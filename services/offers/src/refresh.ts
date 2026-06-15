@@ -2,6 +2,7 @@ import { envNumber, normalizePostalCode, normalizeRetailerKeys } from './config'
 import { prisma } from './db'
 import { extractOffers, fetchSources, resolveScanTargets } from './connectors'
 import { sha256 } from './connectors/common'
+import { createOfferImageLookupBudget, enrichOfferImages, type OfferImageLookupBudget } from './imageLookup'
 import type { NormalizedOffer, RetailerKey, ScanTargetInput } from './types'
 
 function asJson(value: unknown) {
@@ -92,17 +93,80 @@ async function replaceActiveOffers(scanTargetId: number, offers: NormalizedOffer
   ])
 }
 
-async function refreshTarget(runId: number, row: any, force: boolean) {
+function offerRowToNormalizedOffer(row: any): NormalizedOffer {
+  return {
+    externalId: row.externalId,
+    name: row.name,
+    brand: row.brand,
+    description: row.description,
+    priceCents: row.priceCents,
+    unitPriceCents: row.unitPriceCents,
+    unit: row.unit,
+    quantityText: row.quantityText,
+    validFrom: row.validFrom ? row.validFrom.toISOString() : null,
+    validUntil: row.validUntil ? row.validUntil.toISOString() : null,
+    confidence: row.confidence,
+    imageUrl: row.imageUrl,
+    rawText: row.rawText,
+    extractionMethod: row.extractionMethod,
+    retailerKey: row.retailerKey,
+    retailerName: row.retailerName,
+    sourceUrl: row.sourceUrl,
+    sourceFingerprint: row.sourceFingerprint,
+  }
+}
+
+async function enrichActiveOfferImages(scanTargetId: number, budget: OfferImageLookupBudget) {
+  if (budget.searches >= budget.maxSearches) return 0
+
+  const rows = await prisma.offer.findMany({
+    where: {
+      scanTargetId,
+      isActive: true,
+      OR: [{ imageUrl: null }, { imageUrl: '' }],
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: Math.max(1, budget.maxSearches - budget.searches),
+  })
+
+  if (!rows.length) return 0
+
+  const enriched = await enrichOfferImages(rows.map(offerRowToNormalizedOffer), budget)
+  let updated = 0
+  for (let index = 0; index < enriched.length; index += 1) {
+    const imageUrl = enriched[index].imageUrl
+    if (!imageUrl) continue
+    await prisma.offer.update({
+      where: { id: rows[index].id },
+      data: {
+        imageUrl,
+        confidence: enriched[index].confidence || rows[index].confidence,
+      },
+    })
+    updated += 1
+  }
+
+  return updated
+}
+
+async function refreshTarget(runId: number, row: any, force: boolean, imageBudget: OfferImageLookupBudget) {
   const target = toTargetInput(row)
   try {
     const sources = await fetchSources(target)
     const offersBySource = await Promise.all(sources.map((source) => extractOffers(target, source)))
     const allOffers = offersBySource.flat()
     const fingerprint = sha256(sources.map((source) => `${source.url}\n${source.body}`).join('\n---source---\n'))
-    const changed = force || !row.lastFingerprint || row.lastFingerprint !== fingerprint
+    const sourceChanged = force || !row.lastFingerprint || row.lastFingerprint !== fingerprint
+    let changed = sourceChanged
+    let message: string | null = null
 
-    if (changed) {
-      await replaceActiveOffers(row.id, allOffers)
+    if (sourceChanged) {
+      const offersWithImages = await enrichOfferImages(allOffers, imageBudget)
+      await replaceActiveOffers(row.id, offersWithImages)
+    } else {
+      const imageUpdates = await enrichActiveOfferImages(row.id, imageBudget)
+      changed = imageUpdates > 0
+      message = imageUpdates ? 'image_enriched' : 'unchanged'
     }
 
     await prisma.scanTarget.update({
@@ -121,7 +185,7 @@ async function refreshTarget(runId: number, row: any, force: boolean) {
         fingerprint,
         changed,
         offersFound: allOffers.length,
-        message: changed ? null : 'unchanged',
+        message,
       },
     })
 
@@ -175,9 +239,10 @@ export async function refreshOffers(input: {
   let changedTargets = 0
   let offersFound = 0
   const maxTargets = envNumber('OFFERS_MAX_TARGETS_PER_REFRESH', 50)
+  const imageBudget = createOfferImageLookupBudget()
 
   for (const target of targets.slice(0, maxTargets)) {
-    const result = await refreshTarget(run.id, target, force)
+    const result = await refreshTarget(run.id, target, force, imageBudget)
     if (result.changed) changedTargets += 1
     offersFound += result.offersFound
   }
