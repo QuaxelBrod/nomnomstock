@@ -58,7 +58,7 @@ You can trigger a test email by calling the invite endpoint. This will create an
 Replace `you@domain.tld` with a real target address and ensure `.env` is configured.
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/invite \
+curl -X POST http://localhost:3000/api/v1/auth/invite \
   -H "Content-Type: application/json" \
   -d '{"email":"you@domain.tld", "inviter":"Admin"}'
 ```
@@ -67,7 +67,7 @@ Check your SMTP logs or the recipient mailbox. If `EMAIL_AUTH_ENABLED=false`, th
 
 5) Test registration → Super‑Admin approval → activation
 --------------------------------------------------------
-- Register a new user via the registration UI or POST `/api/auth/register` with `{ email, password, name }`.
+- Register a new user via the registration UI or POST `/api/v1/auth/register` with `{ email, password, name }`.
 - If `EMAIL_AUTH_ENABLED=true` and no invite token is provided, a notification is sent to `SUPER_ADMIN_EMAIL` for approval.
 - Super‑Admin clicks the approval link → the user receives an activation mail containing the activation link.
 - User clicks activation link → account `isActive` is set and login is allowed.

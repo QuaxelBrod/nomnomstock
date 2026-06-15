@@ -21,7 +21,7 @@ export default function RegisterPage() {
     setSuccess(null)
     let res
     try {
-      const apiPath = `${base || ''}/api/auth/register`
+      const apiPath = `${base || ''}/api/v1/auth/register`
       const inviteToken = searchParams?.get('invite') || undefined
       res = await fetch(apiPath, {
         method: 'POST',

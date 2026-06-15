@@ -134,7 +134,7 @@ export default function ProfilPage() {
 
     setInviting(true)
     try {
-      const res = await fetch(`${base}/api/auth/invite`, {
+      const res = await fetch(`${base}/api/v1/auth/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: inviteEmail.trim().toLowerCase() }),

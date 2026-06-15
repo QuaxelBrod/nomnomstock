@@ -46,6 +46,8 @@ services:
       DATABASE_URL: file:/data/nomnom.db
       APP_URL: ${APP_URL:-http://localhost:3000}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      BASE_PATH: ${BASE_PATH:-}
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
       API_BASE_URL: ${API_BASE_URL:-http://localhost:3001/api/v1}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-nextauth-secret-change-me}
       ADMIN_MAINTENANCE_TOKEN: ${ADMIN_MAINTENANCE_TOKEN:-dev-admin-token}

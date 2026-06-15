@@ -96,16 +96,44 @@ function parseCookieHeader(value: string | string[] | undefined) {
   return cookies
 }
 
+function normalizeBasePath(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  const prefixed = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  return prefixed.replace(/\/$/, '')
+}
+
+function explicitAuthBasePath() {
+  const explicit = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
+  return normalizeBasePath(explicit)
+}
+
 export function resolveAuthUrl() {
   const raw = process.env.NEXTAUTH_URL || process.env.APP_URL
-  if (raw) return raw.replace(/\/$/, '')
+  if (raw) {
+    const normalizedRaw = raw.replace(/\/$/, '')
+    const explicitBasePath = explicitAuthBasePath()
+    if (!explicitBasePath) return normalizedRaw
+
+    try {
+      const parsed = new URL(normalizedRaw)
+      if (!parsed.pathname || parsed.pathname === '/') {
+        parsed.pathname = explicitBasePath
+        return parsed.toString().replace(/\/$/, '')
+      }
+    } catch {
+      return normalizedRaw
+    }
+
+    return normalizedRaw
+  }
   if (process.env.NODE_ENV !== 'production') return 'http://localhost:3000'
   throw new Error('AUTH_URL_NOT_CONFIGURED')
 }
 
 export function authBaseFromEnv() {
-  const explicit = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ''
-  if (explicit) return explicit.startsWith('/') ? explicit.replace(/\/$/, '') : `/${explicit.replace(/\/$/, '')}`
+  const explicit = explicitAuthBasePath()
+  if (explicit) return explicit
   try {
     const raw = process.env.NEXTAUTH_URL || process.env.APP_URL || ''
     if (!raw) return ''

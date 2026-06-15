@@ -141,7 +141,7 @@ export function registerAuthRoutes(app: Express) {
 
         try {
           const tpl = getEmailTemplate('activation.txt')
-          const activateUrl = `${authUrl}/api/auth/activate?token=${token}`
+          const activateUrl = `${authUrl}/api/v1/auth/activate?token=${token}`
           const text = renderTemplate(tpl, {
             name: normalizedName || normalizedEmail,
             activateUrl,
@@ -175,7 +175,7 @@ export function registerAuthRoutes(app: Express) {
 
       try {
         const tpl = getEmailTemplate('approval-request.txt')
-        const approveUrl = `${authUrl}/api/auth/approve?token=${approvalToken}`
+        const approveUrl = `${authUrl}/api/v1/auth/approve?token=${approvalToken}`
         const text = renderTemplate(tpl, {
           email: normalizedEmail,
           approveUrl,
@@ -392,7 +392,7 @@ export function registerAuthRoutes(app: Express) {
 
       try {
         const tpl = getEmailTemplate('activation.txt')
-        const activateUrl = `${authUrl}/api/auth/activate?token=${actToken}`
+        const activateUrl = `${authUrl}/api/v1/auth/activate?token=${actToken}`
         const text = renderTemplate(tpl, { name: row.email, activateUrl, homeUrl: `${authUrl}/` })
         await sendMail({ to: row.email, subject: 'Account aktivieren', text })
       } catch (mailErr) {

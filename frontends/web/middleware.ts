@@ -27,6 +27,8 @@ const PUBLIC_PATHS_BASELESS = [
   '/auth/approval',
   '/api/auth',
   '/api/auth/',
+  '/api/v1/auth',
+  '/api/v1/auth/',
   '/api/profile',
   '/api/debug',
   '/api/recipes',
