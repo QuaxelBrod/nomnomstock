@@ -1,4 +1,4 @@
-export type RetailerKey = 'aldi' | 'kaufland' | 'lidl' | 'rewe'
+export type RetailerKey = 'aldi' | 'cap' | 'edeka' | 'kaufland' | 'lidl' | 'marktkauf' | 'netto' | 'norma' | 'rewe'
 export type ScopeType = 'postalCode' | 'storeId' | 'regionId'
 
 export type ScanTargetInput = {

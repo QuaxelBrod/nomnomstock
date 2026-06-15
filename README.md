@@ -130,7 +130,9 @@ Note: The Dockerfile expects `emails/` to be copied into the runtime image so te
 
 The offers service is intentionally not exposed through Nginx. It is reachable only inside Docker Compose as `http://offers:3010` and is controlled by the NomNom backend. NomNom stores each household's offer settings (postal code, active retailers, max stores), while the offers service stores scan targets and normalized offer history in its own SQLite database.
 
-Cache keys are based on retailer and locality, not on household ID. If two households use the same postal-code/store scope, their refresh uses the same scan target and cached offers. The current V1 connectors are conservative: they try structured HTML first, fall back to text extraction, and can use a local OpenAI-compatible vision endpoint for image sources when `OFFERS_VISION_ENABLED=true`. PDF rendering/OCR tooling is intentionally left as a later connector enhancement.
+Cache keys are based on retailer and locality, not on household ID. If two households use the same postal-code/store scope, their refresh uses the same scan target and cached offers. The current V1 connectors are conservative: they use one module per retailer, try structured HTML first, fall back to text extraction, and can use a local OpenAI-compatible vision endpoint for image sources when `OFFERS_VISION_ENABLED=true`. Retailer modules are the intended integration point for later official retailer APIs or MCP-backed connectors. PDF rendering/OCR tooling is intentionally left as a later connector enhancement.
+
+Connector debugging can be run from VS Code or a shell, for example `pnpm --filter nomnomstock-offers run test:connector:marktkauf -- --postal-code 10115 --save-dir ./tmp/marktkauf`. Equivalent scripts exist for all configured retailers.
 
 ---
 

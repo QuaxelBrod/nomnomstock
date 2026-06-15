@@ -63,8 +63,13 @@ export default function OfferSettingsPanel() {
 
   const retailers = settings?.retailers || [
     { key: 'aldi', name: 'ALDI' },
+    { key: 'cap', name: 'CAP', status: 'development' },
+    { key: 'edeka', name: 'EDEKA' },
     { key: 'kaufland', name: 'Kaufland' },
     { key: 'lidl', name: 'Lidl' },
+    { key: 'marktkauf', name: 'Marktkauf', status: 'ready' },
+    { key: 'netto', name: 'Netto', status: 'development' },
+    { key: 'norma', name: 'NORMA', status: 'development' },
     { key: 'rewe', name: 'REWE' },
   ]
 
@@ -81,15 +86,18 @@ export default function OfferSettingsPanel() {
         />
       </label>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {retailers.map((retailer) => (
-          <label key={retailer.key} className="flex items-center gap-2 border rounded p-2 text-sm dark:border-gray-700">
+          <label key={retailer.key} className="flex min-h-[44px] items-center gap-2 border rounded p-2 text-sm dark:border-gray-700">
             <input
               type="checkbox"
               checked={retailerKeys.includes(retailer.key)}
               onChange={() => toggleRetailer(retailer.key)}
             />
             <span>{retailer.name}</span>
+            {retailer.status !== 'ready' && (
+              <span className="ml-auto text-[11px] text-amber-700 dark:text-amber-300">unter Entwicklung</span>
+            )}
           </label>
         ))}
       </div>

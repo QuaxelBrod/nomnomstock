@@ -1,20 +1,34 @@
-import { RETAILERS } from '../config'
 import type { NormalizedOffer, OfferSource, RetailerKey, ScanTargetInput } from '../types'
-import { extractStructuredOffers, extractTextOffers, extractVisionFallbackOffers, normalizeOffers } from './common'
+import { aldiConnector } from './aldi'
+import { capConnector } from './cap'
+import { edekaConnector } from './edeka'
+import { extractGenericOffers } from './generic'
+import { kauflandConnector } from './kaufland'
+import { lidlConnector } from './lidl'
+import { marktkaufConnector } from './marktkauf'
+import { nettoConnector } from './netto'
+import { normaConnector } from './norma'
+import { reweConnector } from './rewe'
+import type { RetailerConnector } from './types'
+
+const CONNECTORS: Record<RetailerKey, RetailerConnector> = {
+  aldi: aldiConnector,
+  cap: capConnector,
+  edeka: edekaConnector,
+  kaufland: kauflandConnector,
+  lidl: lidlConnector,
+  marktkauf: marktkaufConnector,
+  netto: nettoConnector,
+  norma: normaConnector,
+  rewe: reweConnector,
+}
+
+export function connectorFor(retailerKey: RetailerKey) {
+  return CONNECTORS[retailerKey]
+}
 
 export function resolveScanTargets(postalCode: string, retailerKeys: RetailerKey[]): ScanTargetInput[] {
-  return retailerKeys.map((retailerKey) => {
-    const retailer = RETAILERS[retailerKey]
-    return {
-      retailerKey,
-      retailerName: retailer.name,
-      scopeType: 'postalCode',
-      scopeValue: postalCode,
-      postalCode,
-      label: `${retailer.name} ${postalCode}`,
-      sourceUrl: retailer.urls[0],
-    }
-  })
+  return retailerKeys.flatMap((retailerKey) => connectorFor(retailerKey).resolveScanTargets(postalCode))
 }
 
 async function fetchWithTimeout(url: string, timeoutMs: number) {
@@ -34,12 +48,11 @@ async function fetchWithTimeout(url: string, timeoutMs: number) {
 }
 
 export async function fetchSources(target: ScanTargetInput): Promise<OfferSource[]> {
-  const retailer = RETAILERS[target.retailerKey]
+  const connector = connectorFor(target.retailerKey)
   const timeoutMs = Number(process.env.OFFERS_FETCH_TIMEOUT_MS || 15000)
   const sources: OfferSource[] = []
 
-  for (const rawUrl of retailer.urls) {
-    const url = rawUrl.includes('?') ? `${rawUrl}&plz=${encodeURIComponent(target.postalCode || '')}` : rawUrl
+  for (const url of connector.sourceUrls(target)) {
     const response = await fetchWithTimeout(url, timeoutMs)
     if (!response.ok) throw new Error(`source_fetch_failed:${response.status}`)
     const contentType = response.headers.get('content-type')
@@ -59,8 +72,5 @@ export async function fetchSources(target: ScanTargetInput): Promise<OfferSource
 }
 
 export async function extractOffers(target: ScanTargetInput, source: OfferSource): Promise<NormalizedOffer[]> {
-  const structured = extractStructuredOffers(source)
-  const raw = structured.length ? structured : extractTextOffers(source)
-  const withFallback = raw.length ? raw : await extractVisionFallbackOffers(source)
-  return normalizeOffers(target, source, withFallback)
+  return connectorFor(target.retailerKey).extractOffers?.(target, source) || extractGenericOffers(target, source)
 }

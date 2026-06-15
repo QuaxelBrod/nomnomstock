@@ -94,7 +94,7 @@ export async function ensureHouseholdOfferSettingsTable() {
         "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         "householdId" INTEGER NOT NULL,
         "postalCode" TEXT,
-        "retailerKeys" TEXT NOT NULL DEFAULT '["aldi","kaufland","lidl","rewe"]',
+        "retailerKeys" TEXT NOT NULL DEFAULT '["aldi","cap","edeka","kaufland","lidl","marktkauf","netto","norma","rewe"]',
         "maxStores" INTEGER NOT NULL DEFAULT 3,
         "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

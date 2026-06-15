@@ -127,8 +127,9 @@ export type ShoppingListUpdateRequest = {
 }
 
 export type OfferRetailer = {
-  key: 'aldi' | 'kaufland' | 'lidl' | 'rewe' | string
+  key: 'aldi' | 'cap' | 'edeka' | 'kaufland' | 'lidl' | 'marktkauf' | 'netto' | 'norma' | 'rewe' | string
   name: string
+  status?: 'ready' | 'development' | string
 }
 
 export type OfferSettings = {

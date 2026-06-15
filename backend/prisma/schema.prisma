@@ -56,7 +56,7 @@ model HouseholdOfferSettings {
   household    Household @relation(fields: [householdId], references: [id])
   householdId  Int       @unique
   postalCode   String?
-  retailerKeys String    @default("[\"aldi\",\"kaufland\",\"lidl\",\"rewe\"]")
+  retailerKeys String    @default("[\"aldi\",\"cap\",\"edeka\",\"kaufland\",\"lidl\",\"marktkauf\",\"netto\",\"norma\",\"rewe\"]")
   maxStores    Int       @default(3)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

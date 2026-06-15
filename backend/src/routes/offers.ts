@@ -5,7 +5,18 @@ import { ensureHouseholdOfferSettingsTable, ensureShoppingListItemTable } from '
 import { apiRoute, sendApiError } from '../apiContract'
 import { requireAuth } from '../serverUtils'
 
-const ALLOWED_RETAILERS = ['aldi', 'kaufland', 'lidl', 'rewe'] as const
+const OFFER_RETAILERS = [
+  { key: 'aldi', name: 'ALDI', status: 'development' },
+  { key: 'cap', name: 'CAP', status: 'development' },
+  { key: 'edeka', name: 'EDEKA', status: 'development' },
+  { key: 'kaufland', name: 'Kaufland', status: 'development' },
+  { key: 'lidl', name: 'Lidl', status: 'development' },
+  { key: 'marktkauf', name: 'Marktkauf', status: 'ready' },
+  { key: 'netto', name: 'Netto', status: 'development' },
+  { key: 'norma', name: 'NORMA', status: 'development' },
+  { key: 'rewe', name: 'REWE', status: 'development' },
+] as const
+const ALLOWED_RETAILERS = OFFER_RETAILERS.map((retailer) => retailer.key)
 const DEFAULT_RETAILERS = [...ALLOWED_RETAILERS]
 
 function parseRetailerKeys(value: unknown) {
@@ -52,10 +63,7 @@ function publicSettings(settings: any) {
     postalCode: settings.postalCode || '',
     retailerKeys: parseRetailerKeys(settings.retailerKeys),
     maxStores: Math.max(1, Math.min(3, Number(settings.maxStores || 3))),
-    retailers: ALLOWED_RETAILERS.map((key) => ({
-      key,
-      name: key === 'aldi' ? 'ALDI' : key === 'rewe' ? 'REWE' : key[0].toUpperCase() + key.slice(1),
-    })),
+    retailers: OFFER_RETAILERS,
   }
 }
 

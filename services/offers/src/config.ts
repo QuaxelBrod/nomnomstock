@@ -6,6 +6,16 @@ export const RETAILERS: Record<RetailerKey, { key: RetailerKey; name: string; ur
     name: 'ALDI',
     urls: ['https://www.aldi-nord.de/angebote.html', 'https://www.aldi-sued.de/de/angebote.html'],
   },
+  cap: {
+    key: 'cap',
+    name: 'CAP',
+    urls: ['https://cap-markt.de/angebote/'],
+  },
+  edeka: {
+    key: 'edeka',
+    name: 'EDEKA',
+    urls: ['https://www.edeka.de/marktsuche.jsp'],
+  },
   kaufland: {
     key: 'kaufland',
     name: 'Kaufland',
@@ -15,6 +25,21 @@ export const RETAILERS: Record<RetailerKey, { key: RetailerKey; name: string; ur
     key: 'lidl',
     name: 'Lidl',
     urls: ['https://www.lidl.de/c/angebote'],
+  },
+  marktkauf: {
+    key: 'marktkauf',
+    name: 'Marktkauf',
+    urls: ['https://www.marktkauf.de/marktangebote', 'https://www.marktkauf.de/online-wochenangebote/kat-M0794'],
+  },
+  netto: {
+    key: 'netto',
+    name: 'Netto',
+    urls: ['https://www.netto-online.de/angebote'],
+  },
+  norma: {
+    key: 'norma',
+    name: 'NORMA',
+    urls: ['https://www.norma-online.de/de/angebote/'],
   },
   rewe: {
     key: 'rewe',
