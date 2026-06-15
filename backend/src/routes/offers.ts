@@ -170,6 +170,32 @@ export function registerOfferRoutes(app: Express) {
     }
   })
 
+  app.get(apiRoute('/api/offers/current'), async (req, res) => {
+    try {
+      const auth = await requireAuth(req, res)
+      if (!auth) return
+      if (!auth.householdId) return sendApiError(res, 400, 'bad_request', 'No household assigned')
+
+      const settings = publicSettings(await getOrCreateSettings(auth.householdId))
+      if (!settings.postalCode) return sendApiError(res, 400, 'validation_error', 'postalCode required')
+
+      const limit = Math.max(1, Math.min(300, Number(req.query.limit || 120) || 120))
+      const params = new URLSearchParams({
+        postalCode: settings.postalCode,
+        retailerKeys: settings.retailerKeys.join(','),
+        limit: String(limit),
+      })
+      const data = await callOffersService(`/offers/current?${params.toString()}`, undefined, 'GET')
+      return res.json({ ...data, settings })
+    } catch (err: any) {
+      if (err?.message === 'OFFERS_SERVICE_URL_NOT_CONFIGURED') {
+        return sendApiError(res, 503, 'server_error', 'OFFERS_SERVICE_URL_NOT_CONFIGURED')
+      }
+      console.error('GET /api/offers/current error', err)
+      return sendApiError(res, err?.status || 500, 'server_error', err?.message || 'server error', err?.details)
+    }
+  })
+
   app.post(apiRoute('/api/shopping/offer-plan'), async (req, res) => {
     try {
       const auth = await requireAuth(req, res)

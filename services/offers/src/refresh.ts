@@ -203,6 +203,75 @@ export async function getLatestRefresh() {
   return prisma.refreshRun.findFirst({ orderBy: { startedAt: 'desc' }, include: { items: true } })
 }
 
+export async function listCurrentOffers(input: {
+  postalCode?: unknown
+  retailerKeys?: unknown
+  limit?: unknown
+}) {
+  const postalCode = normalizePostalCode(input.postalCode)
+  const retailerKeys = normalizeRetailerKeys(input.retailerKeys)
+  const rawLimit = Number(input.limit || 120)
+  const limit = Math.max(1, Math.min(300, Number.isFinite(rawLimit) ? rawLimit : 120))
+  const now = new Date()
+
+  const offers = await prisma.offer.findMany({
+    where: {
+      isActive: true,
+      retailerKey: { in: retailerKeys },
+      OR: [{ validUntil: null }, { validUntil: { gte: now } }],
+      ...(postalCode ? { scanTarget: { postalCode } } : {}),
+    },
+    include: {
+      scanTarget: {
+        select: {
+          id: true,
+          label: true,
+          scopeType: true,
+          scopeValue: true,
+          postalCode: true,
+          sourceUrl: true,
+          lastRefreshedAt: true,
+        },
+      },
+    },
+    orderBy: [{ retailerName: 'asc' }, { priceCents: 'asc' }, { updatedAt: 'desc' }],
+    take: limit,
+  })
+
+  return {
+    offers: offers.map((offer: any) => ({
+      id: offer.id,
+      retailerKey: offer.retailerKey,
+      retailerName: offer.retailerName,
+      name: offer.name,
+      brand: offer.brand,
+      description: offer.description,
+      priceCents: offer.priceCents,
+      unitPriceCents: offer.unitPriceCents,
+      unit: offer.unit,
+      quantityText: offer.quantityText,
+      validFrom: offer.validFrom ? offer.validFrom.toISOString() : null,
+      validUntil: offer.validUntil ? offer.validUntil.toISOString() : null,
+      confidence: offer.confidence,
+      imageUrl: offer.imageUrl,
+      sourceUrl: offer.sourceUrl || offer.scanTarget?.sourceUrl || null,
+      updatedAt: offer.updatedAt.toISOString(),
+      scanTarget: offer.scanTarget
+        ? {
+            id: offer.scanTarget.id,
+            label: offer.scanTarget.label,
+            scopeType: offer.scanTarget.scopeType,
+            scopeValue: offer.scanTarget.scopeValue,
+            postalCode: offer.scanTarget.postalCode,
+            sourceUrl: offer.scanTarget.sourceUrl,
+            lastRefreshedAt: offer.scanTarget.lastRefreshedAt ? offer.scanTarget.lastRefreshedAt.toISOString() : null,
+          }
+        : null,
+    })),
+    latestRefresh: await getLatestRefresh(),
+  }
+}
+
 export async function purgeOldOffers() {
   const days = envNumber('OFFERS_HISTORY_RETENTION_DAYS', 180)
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)

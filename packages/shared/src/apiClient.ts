@@ -1,6 +1,7 @@
 import type {
   ApiErrorBody,
   ApiHealth,
+  CurrentOffersResponse,
   DeviceListResponse,
   DevicePairingCreateRequest,
   DevicePairingCreateResponse,
@@ -243,6 +244,10 @@ export class ApiClient {
 
   getLatestOfferPlan() {
     return this.get<OfferPlanResponse>(this.apiPath('/shopping/offer-plan/latest'))
+  }
+
+  getCurrentOffers(limit = 180) {
+    return this.get<CurrentOffersResponse>(`${this.apiPath('/offers/current')}?limit=${encodeURIComponent(String(limit))}`)
   }
 
   getProfile(email: string) {

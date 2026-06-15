@@ -5,7 +5,7 @@ import bodyParser from 'body-parser'
 import { DEFAULT_RETAILERS, envNumber, normalizePostalCode, normalizeRetailerKeys } from './config'
 import { prisma } from './db'
 import { createOfferPlan, getLatestPlan, getPlan } from './planner'
-import { getLatestRefresh, purgeOldOffers, refreshOffers, upsertScanTargets } from './refresh'
+import { getLatestRefresh, listCurrentOffers, purgeOldOffers, refreshOffers, upsertScanTargets } from './refresh'
 import { ensureOfferSchema } from './schema'
 
 const app = express()
@@ -74,6 +74,19 @@ app.post('/refresh', async (req, res) => {
 app.get('/refresh/latest', async (_req, res) => {
   try {
     return res.json({ run: await getLatestRefresh() })
+  } catch (err) {
+    return errorResponse(res, err)
+  }
+})
+
+app.get('/offers/current', async (req, res) => {
+  try {
+    const data = await listCurrentOffers({
+      postalCode: req.query.postalCode,
+      retailerKeys: req.query.retailerKeys,
+      limit: req.query.limit,
+    })
+    return res.json(data)
   } catch (err) {
     return errorResponse(res, err)
   }

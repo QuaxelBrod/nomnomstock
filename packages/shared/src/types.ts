@@ -209,6 +209,40 @@ export type OfferRefreshResponse = {
   }
 }
 
+export type CurrentOffer = {
+  id: ID
+  retailerKey: string
+  retailerName: string
+  name: string
+  brand?: string | null
+  description?: string | null
+  priceCents: number
+  unitPriceCents?: number | null
+  unit?: string | null
+  quantityText?: string | null
+  validFrom?: string | null
+  validUntil?: string | null
+  confidence?: number
+  imageUrl?: string | null
+  sourceUrl?: string | null
+  updatedAt?: string | null
+  scanTarget?: {
+    id?: ID
+    label?: string | null
+    scopeType?: string | null
+    scopeValue?: string | null
+    postalCode?: string | null
+    sourceUrl?: string | null
+    lastRefreshedAt?: string | null
+  } | null
+}
+
+export type CurrentOffersResponse = {
+  offers: CurrentOffer[]
+  settings?: OfferSettings
+  latestRefresh?: OfferRefreshResponse['run'] | null
+}
+
 export type UserPublic = {
   id: ID
   email: string
