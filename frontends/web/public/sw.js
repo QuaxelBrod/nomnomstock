@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomnom-static-v7'
+const CACHE_NAME = 'nomnom-static-v8'
 const BASE_PATH = '/nomnomstock'
 const APP_SHELL = `${BASE_PATH}/auth/login/`
 const ASSETS = [
@@ -10,7 +10,9 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(ASSETS.map((asset) => cache.add(asset)))
+    )
   )
   self.skipWaiting()
 })
@@ -33,6 +35,11 @@ self.addEventListener('fetch', (event) => {
 
   // Keep browser extension and cross-origin requests untouched.
   if (url.origin !== self.location.origin) return
+  if (request.method !== 'GET') return
+
+  // Let Next.js hashed build assets use the browser/http cache directly.
+  // Intercepting them cache-first can strand old PWAs after a deployment.
+  if (url.pathname.includes('/_next/static/')) return
 
   // Navigations: network first, app-shell fallback.
   if (request.mode === 'navigate') {
@@ -60,11 +67,17 @@ self.addEventListener('fetch', (event) => {
     caches.open(CACHE_NAME).then(async (cache) => {
       const cached = await cache.match(request)
       if (cached) return cached
-      const response = await fetch(request)
-      if (request.method === 'GET') {
+      try {
+        const response = await fetch(request)
         cache.put(request, response.clone())
+        return response
+      } catch {
+        return new Response('offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        })
       }
-      return response
     })
   )
 })
