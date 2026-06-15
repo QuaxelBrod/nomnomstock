@@ -47,7 +47,21 @@ model Household {
   devicePairings DevicePairing[]
   apiTokens ApiToken[]
   scannerEvents ScannerEvent[]
+  offerSettings HouseholdOfferSettings?
   createdAt DateTime @default(now())
+}
+
+model HouseholdOfferSettings {
+  id           Int       @id @default(autoincrement())
+  household    Household @relation(fields: [householdId], references: [id])
+  householdId  Int       @unique
+  postalCode   String?
+  retailerKeys String    @default("[\"aldi\",\"kaufland\",\"lidl\",\"rewe\"]")
+  maxStores    Int       @default(3)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([postalCode])
 }
 
 model Product {

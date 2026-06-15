@@ -1,8 +1,38 @@
 services:
+  offers:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    command: sh -c "pnpm install --frozen-lockfile && pnpm --filter nomnomstock-offers run prisma:generate && pnpm --filter nomnomstock-offers run dev"
+    environment:
+      NODE_ENV: development
+      PORT: 3010
+      OFFERS_DATABASE_URL: file:/data/offers/offers.db
+      OFFERS_SERVICE_TOKEN: ${OFFERS_SERVICE_TOKEN:-dev-offers-token}
+      OFFERS_SCHEDULER_ENABLED: ${OFFERS_SCHEDULER_ENABLED:-true}
+      OFFERS_REFRESH_HOUR: ${OFFERS_REFRESH_HOUR:-6}
+      OFFERS_HISTORY_RETENTION_DAYS: ${OFFERS_HISTORY_RETENTION_DAYS:-180}
+      OFFERS_VISION_ENABLED: ${OFFERS_VISION_ENABLED:-false}
+      OFFERS_VISION_BASE_URL: ${OFFERS_VISION_BASE_URL:-}
+      OFFERS_VISION_MODEL: ${OFFERS_VISION_MODEL:-}
+      OFFERS_VISION_API_KEY: ${OFFERS_VISION_API_KEY:-}
+      OFFERS_FETCH_TIMEOUT_MS: ${OFFERS_FETCH_TIMEOUT_MS:-15000}
+    volumes:
+      - ./:/app
+      - pnpm-store:/pnpm/store
+      - node-modules:/app/node_modules
+      - offers-node-modules:/app/services/offers/node_modules
+      - offers-data:/data/offers
+    expose:
+      - "3010"
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      - offers
     working_dir: /app
     command: sh -c "pnpm install --frozen-lockfile && pnpm --filter nomnomstock-backend exec prisma generate && pnpm --filter nomnomstock-backend exec prisma migrate deploy && pnpm --filter nomnomstock-backend run prisma:seed && pnpm --filter nomnomstock-backend run dev"
     environment:
@@ -33,6 +63,8 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-cortex}
       OLLAMA_ENABLED: ${OLLAMA_ENABLED:-false}
+      OFFERS_SERVICE_URL: ${OFFERS_SERVICE_URL:-http://offers:3010}
+      OFFERS_SERVICE_TOKEN: ${OFFERS_SERVICE_TOKEN:-dev-offers-token}
     volumes:
       - ./:/app
       - pnpm-store:/pnpm/store
@@ -40,6 +72,7 @@ services:
       - backend-node-modules:/app/backend/node_modules
       - web-node-modules:/app/frontends/web/node_modules
       - shared-node-modules:/app/packages/shared/node_modules
+      - offers-node-modules:/app/services/offers/node_modules
       - data:/data
     ports:
       - "3001:3001"
@@ -78,4 +111,6 @@ volumes:
   backend-node-modules:
   web-node-modules:
   shared-node-modules:
+  offers-node-modules:
   data:
+  offers-data:

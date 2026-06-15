@@ -126,6 +126,89 @@ export type ShoppingListUpdateRequest = {
   note?: string | null
 }
 
+export type OfferRetailer = {
+  key: 'aldi' | 'kaufland' | 'lidl' | 'rewe' | string
+  name: string
+}
+
+export type OfferSettings = {
+  id: ID
+  householdId: ID
+  postalCode: string
+  retailerKeys: string[]
+  maxStores: number
+  retailers: OfferRetailer[]
+}
+
+export type OfferSettingsResponse = {
+  settings: OfferSettings
+}
+
+export type OfferSettingsUpdateRequest = {
+  postalCode?: string
+  retailerKeys?: string[]
+  maxStores?: number
+}
+
+export type OfferMatch = {
+  itemId: ID
+  productName: string
+  retailerKey: string
+  retailerName: string
+  offerId: ID
+  offerName: string
+  offerBrand?: string | null
+  priceCents: number
+  unit?: string | null
+  quantityText?: string | null
+  validUntil?: string | null
+  sourceUrl?: string | null
+  score: number
+  matchType: 'exact' | 'fuzzy' | 'substitute' | string
+  confidence: number
+}
+
+export type OfferPlan = {
+  id?: ID
+  createdAt?: string
+  postalCode: string
+  maxStores: number
+  selectedRetailers: string[]
+  totalCents: number
+  matchedItems: number
+  missingItems: Array<{ itemId: ID; productName: string }>
+  stores: Array<{
+    retailerKey: string
+    retailerName: string
+    totalCents: number
+    matches: OfferMatch[]
+  }>
+  substitutes: OfferMatch[]
+  dataFreshness: Array<{
+    retailerKey: string
+    retailerName: string
+    scopeValue: string
+    lastRefreshedAt?: string | null
+  }>
+}
+
+export type OfferPlanResponse = {
+  plan: OfferPlan | null
+}
+
+export type OfferRefreshResponse = {
+  run: {
+    id: ID
+    status: string
+    scannedTargets: number
+    changedTargets: number
+    offersFound: number
+    message?: string | null
+    startedAt: string
+    finishedAt?: string | null
+  }
+}
+
 export type UserPublic = {
   id: ID
   email: string

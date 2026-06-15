@@ -9,15 +9,17 @@
   "workspaces": [
     "backend",
     "frontends/*",
-    "packages/*"
+    "packages/*",
+    "services/*"
   ],
   "scripts": {
-    "dev": "pnpm -r --parallel --filter nomnomstock-backend --filter nomnomstock-web run dev",
+    "dev": "pnpm -r --parallel --filter nomnomstock-backend --filter nomnomstock-web --filter nomnomstock-offers run dev",
     "build:shared": "pnpm --filter nomnomstock-shared run build",
     "build:backend": "pnpm --filter nomnomstock-backend run build",
+    "build:offers": "pnpm --filter nomnomstock-offers run build",
     "build:web": "pnpm --filter nomnomstock-web run build",
-    "build": "pnpm run build:shared && pnpm run build:backend && pnpm run build:web",
-    "typecheck": "pnpm --filter nomnomstock-shared run typecheck && pnpm --filter nomnomstock-backend run typecheck && pnpm --filter nomnomstock-web run typecheck",
+    "build": "pnpm run build:shared && pnpm run build:backend && pnpm run build:offers && pnpm run build:web",
+    "typecheck": "pnpm --filter nomnomstock-shared run typecheck && pnpm --filter nomnomstock-backend run typecheck && pnpm --filter nomnomstock-offers run typecheck && pnpm --filter nomnomstock-web run typecheck",
     "start": "pnpm --filter nomnomstock-web run start",
     "start:backend": "pnpm --filter nomnomstock-backend run start",
     "lint": "pnpm --filter nomnomstock-web run lint",

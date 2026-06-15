@@ -13,6 +13,10 @@ import type {
   LocationCreateRequest,
   LocationUpdateRequest,
   OkResponse,
+  OfferPlanResponse,
+  OfferRefreshResponse,
+  OfferSettingsResponse,
+  OfferSettingsUpdateRequest,
   Product,
   ProductCreateRequest,
   ProductLookupRequest,
@@ -133,6 +137,10 @@ export class ApiClient {
     return this.request<T>(path, { ...opts, method: 'POST', body })
   }
 
+  put<T>(path: string, body?: unknown, opts: Omit<RequestOptions, 'method' | 'body'> = {}) {
+    return this.request<T>(path, { ...opts, method: 'PUT', body })
+  }
+
   patch<T>(path: string, body?: unknown, opts: Omit<RequestOptions, 'method' | 'body'> = {}) {
     return this.request<T>(path, { ...opts, method: 'PATCH', body })
   }
@@ -215,6 +223,26 @@ export class ApiClient {
     return this.get<Array<{ product: Product; lastRemovedAt: string; quantity: number }>>(
       this.apiPath('/shopping/recent-removed')
     )
+  }
+
+  getOfferSettings() {
+    return this.get<OfferSettingsResponse>(this.apiPath('/offers/settings'))
+  }
+
+  updateOfferSettings(body: OfferSettingsUpdateRequest) {
+    return this.put<OfferSettingsResponse>(this.apiPath('/offers/settings'), body)
+  }
+
+  refreshOffers(force = false) {
+    return this.post<OfferRefreshResponse>(this.apiPath('/offers/refresh'), { force })
+  }
+
+  createOfferPlan(forceRefresh = false) {
+    return this.post<OfferPlanResponse>(this.apiPath('/shopping/offer-plan'), { forceRefresh })
+  }
+
+  getLatestOfferPlan() {
+    return this.get<OfferPlanResponse>(this.apiPath('/shopping/offer-plan/latest'))
   }
 
   getProfile(email: string) {

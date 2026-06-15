@@ -201,6 +201,8 @@ function requiredScopeForRequest(req: ExpressRequest) {
   if (method === 'GET' && pathname === '/api/scanner/events') return 'scanner:read'
   if (method === 'PATCH' && /^\/api\/scanner\/events\/\d+$/.test(pathname)) return 'scanner:write'
   if (pathname === '/api/devices' || pathname.startsWith('/api/devices/')) return 'device:manage'
+  if (pathname === '/api/offers/settings' || pathname === '/api/offers/refresh') return 'shopping:write'
+  if (pathname === '/api/shopping/offer-plan' || pathname === '/api/shopping/offer-plan/latest') return 'shopping:read'
 
   return '*'
 }

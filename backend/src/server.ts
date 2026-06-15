@@ -9,6 +9,7 @@ import { registerDebugRoutes } from './routes/debug'
 import { registerDeviceRoutes } from './routes/devices'
 import { registerHealthRoutes } from './routes/health'
 import { registerLocationRoutes } from './routes/locations'
+import { registerOfferRoutes } from './routes/offers'
 import { registerProductRoutes } from './routes/products'
 import { registerProfileRoutes } from './routes/profile'
 import { registerRecipeRoutes } from './routes/recipes'
@@ -31,6 +32,7 @@ registerAuthRoutes(app)
 registerProductRoutes(app)
 registerLocationRoutes(app)
 registerStockRoutes(app)
+registerOfferRoutes(app)
 registerShoppingRoutes(app)
 registerProfileRoutes(app)
 registerRecipeRoutes(app)

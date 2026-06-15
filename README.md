@@ -8,6 +8,7 @@ This repository contains nomnomstock — a small Next.js application to manage p
 
 - Frontend: Next.js (App Router), Tailwind CSS (`frontends/web`)
 - Backend: Express API (`backend`)
+- Offers service: internal Express worker/API (`services/offers`) for regional offer scans
 - Auth: NextAuth im Frontend + Credentials-Validierung im Backend
 - Database: Prisma + SQLite (file-based for simple deployments)
 - Barcode scanning: ZXing in the browser
@@ -24,6 +25,7 @@ This README explains features, local setup, deployment hints and common troubles
 - Product lookup (local DB + OpenFoodFacts fallback)
 - Add / Reduce / Move stock with audit entries
 - Shopping list: add items manually or via stock reduction
+- Regional offer planning for shopping lists via an internal offers service
 - Barcode scanner UI to lookup/add products
 - PWA installable with offline-capable service worker
 - Household support: data isolated per household
@@ -93,7 +95,7 @@ Build and run with Docker Compose (example):
 
 ```bash
 docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml up -d backend web
+docker compose -f docker-compose.prod.yml up -d offers backend web
 docker compose -f docker-compose.prod.yml run --rm migrate
 ```
 
@@ -107,9 +109,23 @@ Important env vars for production:
 - `BACKEND_URL` — internal API URL for frontend proxy (e.g. `http://backend:3001`)
 - `NEXT_PUBLIC_API_BASE` — optional frontend fallback (usually same as `BACKEND_URL`)
 - `API_BASE_URL` — public API v1 URL embedded in scanner pairing payloads (e.g. `https://api.example.tld/api/v1`)
+- `OFFERS_SERVICE_URL` — internal offers service URL for the backend, normally `http://offers:3010`
+- `OFFERS_SERVICE_TOKEN` — shared bearer token between backend and offers service
+- `OFFERS_DATABASE_URL` — offers-service SQLite DB, normally `file:/data/offers/offers.db`
+- `OFFERS_REFRESH_HOUR` — daily refresh hour, default `6`
+- `OFFERS_HISTORY_RETENTION_DAYS` — inactive offer history retention, default `180`
+- `OFFERS_VISION_ENABLED` — enables the local vision extraction hook, default `false`
+- `OFFERS_VISION_BASE_URL` — optional local OpenAI-compatible vision endpoint
+- `OFFERS_VISION_MODEL` — optional local vision model name
 - Email / SMTP settings (for invites/activation)
 
 Note: The Dockerfile expects `emails/` to be copied into the runtime image so templates exist.
+
+### Offers service
+
+The offers service is intentionally not exposed through Nginx. It is reachable only inside Docker Compose as `http://offers:3010` and is controlled by the NomNom backend. NomNom stores each household's offer settings (postal code, active retailers, max stores), while the offers service stores scan targets and normalized offer history in its own SQLite database.
+
+Cache keys are based on retailer and locality, not on household ID. If two households use the same postal-code/store scope, their refresh uses the same scan target and cached offers. The current V1 connectors are conservative: they try structured HTML first, fall back to text extraction, and can use a local OpenAI-compatible vision endpoint for image sources when `OFFERS_VISION_ENABLED=true`. PDF rendering/OCR tooling is intentionally left as a later connector enhancement.
 
 ---
 
@@ -137,6 +153,10 @@ These endpoints are implemented by the Express backend under `backend/src/server
 - `POST /api/stock/{id}/reduce` — reduce a stock entry (amount, toShopping)
 - `POST /api/stock/move` — move quantity from a stock entry to a location
 - `GET/POST /api/shopping` — read/add shopping items
+- `POST /api/shopping/offer-plan` — create a regional offer plan for the current shopping list
+- `GET /api/shopping/offer-plan/latest` — read the latest offer plan
+- `GET/PUT /api/offers/settings` — read/update household offer settings
+- `POST /api/offers/refresh` — manually refresh the configured regional offers
 - `GET /api/locations` — list locations; `POST` create
 - `POST /api/lookup` — lookup product by barcode
 

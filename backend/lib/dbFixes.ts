@@ -86,3 +86,29 @@ export async function ensureShoppingListItemColumns() {
     throw err
   }
 }
+
+export async function ensureHouseholdOfferSettingsTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "HouseholdOfferSettings" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "householdId" INTEGER NOT NULL,
+        "postalCode" TEXT,
+        "retailerKeys" TEXT NOT NULL DEFAULT '["aldi","kaufland","lidl","rewe"]',
+        "maxStores" INTEGER NOT NULL DEFAULT 3,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "HouseholdOfferSettings_householdId_fkey" FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+      )
+    `)
+    await prisma.$executeRawUnsafe(
+      'CREATE UNIQUE INDEX IF NOT EXISTS "HouseholdOfferSettings_householdId_key" ON "HouseholdOfferSettings"("householdId")'
+    )
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "HouseholdOfferSettings_postalCode_idx" ON "HouseholdOfferSettings"("postalCode")'
+    )
+  } catch (err) {
+    console.error('ensureHouseholdOfferSettingsTable error', err)
+    throw err
+  }
+}

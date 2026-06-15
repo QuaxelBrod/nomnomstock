@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import ShoppingItem from '../../components/ShoppingItem'
 import AddShoppingItem from '../../components/AddShoppingItem'
 import Recommendations from '../../components/Recommendations'
+import OfferPlanner from '../../components/offers/OfferPlanner'
 import { ApiClient } from 'nomnomstock-shared'
 
 export const dynamic = 'force-dynamic'
@@ -28,6 +29,8 @@ export default async function EinkaufPage() {
       <div className="mb-4">
         <AddShoppingItem showOnlyButton />
       </div>
+
+      <OfferPlanner itemCount={items.length} />
 
       {loadError && (
         <p className="text-sm text-red-600 dark:text-red-400 mb-3">{loadError}</p>

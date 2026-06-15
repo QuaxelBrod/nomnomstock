@@ -11,9 +11,34 @@ x-app-build: &app-build
     NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://backend:3001}
 
 services:
+  offers:
+    image: nomnomstock-app:local
+    build: *app-build
+    restart: unless-stopped
+    command: pnpm --filter nomnomstock-offers run start
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      OFFERS_DATABASE_URL: file:/data/offers/offers.db
+      OFFERS_SERVICE_TOKEN: ${OFFERS_SERVICE_TOKEN:-dev-offers-token}
+      OFFERS_SCHEDULER_ENABLED: ${OFFERS_SCHEDULER_ENABLED:-true}
+      OFFERS_REFRESH_HOUR: ${OFFERS_REFRESH_HOUR:-6}
+      OFFERS_HISTORY_RETENTION_DAYS: ${OFFERS_HISTORY_RETENTION_DAYS:-180}
+      OFFERS_VISION_ENABLED: ${OFFERS_VISION_ENABLED:-false}
+      OFFERS_VISION_BASE_URL: ${OFFERS_VISION_BASE_URL:-}
+      OFFERS_VISION_MODEL: ${OFFERS_VISION_MODEL:-}
+      OFFERS_VISION_API_KEY: ${OFFERS_VISION_API_KEY:-}
+      OFFERS_FETCH_TIMEOUT_MS: ${OFFERS_FETCH_TIMEOUT_MS:-15000}
+    volumes:
+      - offers-data:/data/offers
+    expose:
+      - '3010'
+
   backend:
     image: nomnomstock-app:local
     build: *app-build
+    depends_on:
+      - offers
     restart: unless-stopped
     command: pnpm --filter nomnomstock-backend run start
     environment:
@@ -47,6 +72,8 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-cortex}
       OLLAMA_ENABLED: ${OLLAMA_ENABLED:-true}
+      OFFERS_SERVICE_URL: ${OFFERS_SERVICE_URL:-http://offers:3010}
+      OFFERS_SERVICE_TOKEN: ${OFFERS_SERVICE_TOKEN:-dev-offers-token}
     volumes:
       - data:/data
     ports:
@@ -108,3 +135,4 @@ services:
 
 volumes:
   data:
+  offers-data:

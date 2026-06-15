@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState, useRef } from 'react'
 import ScannerPairingPanel from '../../components/ScannerPairingPanel'
+import OfferSettingsPanel from '../../components/offers/OfferSettingsPanel'
 
 export default function ProfilPage() {
   const { data: session } = useSession()
@@ -204,6 +205,8 @@ export default function ProfilPage() {
           </div>
 
           <ScannerPairingPanel />
+
+          <OfferSettingsPanel />
 
           <div className="mt-6">
             <h3 className="text-sm font-medium mb-2">Darstellung</h3>

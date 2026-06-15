@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("OFFERS_DATABASE_URL")
+}
+
+model ScanTarget {
+  id              Int          @id @default(autoincrement())
+  retailerKey     String
+  retailerName    String
+  scopeType       String
+  scopeValue      String
+  postalCode      String?
+  storeId         String?
+  regionId        String?
+  label           String
+  sourceUrl       String?
+  lastFingerprint String?
+  lastRefreshedAt DateTime?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  offers          Offer[]
+  refreshItems    RefreshItem[]
+
+  @@unique([retailerKey, scopeType, scopeValue])
+  @@index([postalCode])
+  @@index([retailerKey])
+}
+
+model Offer {
+  id               Int        @id @default(autoincrement())
+  scanTarget       ScanTarget @relation(fields: [scanTargetId], references: [id])
+  scanTargetId     Int
+  retailerKey      String
+  retailerName     String
+  sourceUrl        String?
+  sourceFingerprint String
+  extractionMethod String
+  externalId       String?
+  name             String
+  brand            String?
+  description      String?
+  priceCents       Int
+  unitPriceCents   Int?
+  unit             String?
+  quantityText     String?
+  validFrom        DateTime?
+  validUntil       DateTime?
+  confidence       Float      @default(0.6)
+  imageUrl         String?
+  isActive         Boolean    @default(true)
+  rawText          String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([scanTargetId, isActive])
+  @@index([retailerKey])
+  @@index([sourceFingerprint])
+  @@index([validUntil])
+}
+
+model RefreshRun {
+  id             Int           @id @default(autoincrement())
+  status         String        @default("running")
+  requestedBy    String?
+  postalCode     String?
+  retailerKeys   String?
+  scannedTargets Int           @default(0)
+  changedTargets Int           @default(0)
+  offersFound    Int           @default(0)
+  message        String?
+  startedAt      DateTime      @default(now())
+  finishedAt     DateTime?
+  items          RefreshItem[]
+}
+
+model RefreshItem {
+  id           Int         @id @default(autoincrement())
+  refreshRun   RefreshRun  @relation(fields: [refreshRunId], references: [id])
+  refreshRunId Int
+  scanTarget   ScanTarget  @relation(fields: [scanTargetId], references: [id])
+  scanTargetId Int
+  status       String
+  fingerprint  String?
+  changed      Boolean     @default(false)
+  offersFound  Int         @default(0)
+  message      String?
+  createdAt    DateTime    @default(now())
+
+  @@index([refreshRunId])
+  @@index([scanTargetId])
+}
+
+model OfferPlan {
+  id               Int      @id @default(autoincrement())
+  householdId      Int
+  postalCode       String
+  retailerKeys     String
+  maxStores        Int      @default(3)
+  settingsSnapshot String
+  shoppingSnapshot String
+  result           String
+  createdAt        DateTime @default(now())
+
+  @@index([householdId, createdAt])
+}
