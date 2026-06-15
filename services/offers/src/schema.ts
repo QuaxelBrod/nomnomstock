@@ -91,6 +91,24 @@ export async function ensureOfferSchema() {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `)
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "BrowserScrapeSnapshot" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "scanTargetId" INTEGER,
+      "retailerKey" TEXT NOT NULL,
+      "retailerName" TEXT NOT NULL,
+      "postalCode" TEXT,
+      "sourceUrl" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "httpStatus" INTEGER,
+      "offersFound" INTEGER NOT NULL DEFAULT 0,
+      "message" TEXT,
+      "htmlPath" TEXT,
+      "screenshotPath" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "BrowserScrapeSnapshot_scanTargetId_fkey" FOREIGN KEY ("scanTargetId") REFERENCES "ScanTarget" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    )
+  `)
 
   await prisma.$executeRawUnsafe(
     'CREATE UNIQUE INDEX IF NOT EXISTS "ScanTarget_retailerKey_scopeType_scopeValue_key" ON "ScanTarget"("retailerKey", "scopeType", "scopeValue")'
@@ -104,4 +122,13 @@ export async function ensureOfferSchema() {
   await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "RefreshItem_refreshRunId_idx" ON "RefreshItem"("refreshRunId")')
   await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "RefreshItem_scanTargetId_idx" ON "RefreshItem"("scanTargetId")')
   await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "OfferPlan_householdId_createdAt_idx" ON "OfferPlan"("householdId", "createdAt")')
+  await prisma.$executeRawUnsafe(
+    'CREATE INDEX IF NOT EXISTS "BrowserScrapeSnapshot_retailerKey_createdAt_idx" ON "BrowserScrapeSnapshot"("retailerKey", "createdAt")'
+  )
+  await prisma.$executeRawUnsafe(
+    'CREATE INDEX IF NOT EXISTS "BrowserScrapeSnapshot_scanTargetId_createdAt_idx" ON "BrowserScrapeSnapshot"("scanTargetId", "createdAt")'
+  )
+  await prisma.$executeRawUnsafe(
+    'CREATE INDEX IF NOT EXISTS "BrowserScrapeSnapshot_status_createdAt_idx" ON "BrowserScrapeSnapshot"("status", "createdAt")'
+  )
 }

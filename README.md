@@ -122,6 +122,14 @@ Important env vars for production:
 - `OFFERS_IMAGE_LOOKUP_DELAY_MS` — delay between image-search requests, default `6500`
 - `OFFERS_IMAGE_LOOKUP_TIMEOUT_MS` — timeout for one image-search request, default `5000`
 - `OFFERS_IMAGE_LOOKUP_USER_AGENT` — optional custom User-Agent for catalog lookups
+- `OFFERS_BROWSER_SCRAPER_ENABLED` — enables the daily browser-rendered scrape path, default `false`
+- `OFFERS_BROWSER_RETAILERS` — comma-separated browser-enabled retailers, currently `marktkauf`
+- `OFFERS_BROWSER_MAX_TARGETS_PER_RUN` — safety limit for browser scrape targets per daily run, default `5`
+- `OFFERS_BROWSER_SNAPSHOT_DIR` — stores rendered HTML/screenshots for debugging, default `/data/offers/browser-snapshots` in Docker
+- `OFFERS_BROWSER_WS_ENDPOINT` — optional remote Chrome/CDP endpoint, e.g. Browserless `ws://browserless:3000?token=...`
+- `OFFERS_BROWSER_CONNECT_TIMEOUT_MS` — timeout for connecting to the remote/local browser, default `30000`
+- `OFFERS_BROWSER_TIMEOUT_MS` — navigation timeout for one browser-rendered page, default `45000`
+- `OFFERS_BROWSER_SETTLE_MS` — wait time after page interactions before extracting HTML, default `2500`
 - Email / SMTP settings (for invites/activation)
 
 Note: The Dockerfile expects `emails/` to be copied into the runtime image so templates exist.
@@ -133,6 +141,29 @@ The offers service is intentionally not exposed through Nginx. It is reachable o
 Cache keys are based on retailer and locality, not on household ID. If two households use the same postal-code/store scope, their refresh uses the same scan target and cached offers. The current V1 connectors are conservative: they use one module per retailer, try structured HTML first, fall back to text extraction, and can use a local OpenAI-compatible vision endpoint for image sources when `OFFERS_VISION_ENABLED=true`. Retailer modules are the intended integration point for later official retailer APIs or MCP-backed connectors. PDF rendering/OCR tooling is intentionally left as a later connector enhancement.
 
 Connector debugging can be run from VS Code or a shell, for example `pnpm --filter nomnomstock-offers run test:connector:marktkauf -- --postal-code 10115 --save-dir ./tmp/marktkauf`. Equivalent scripts exist for all configured retailers.
+
+Browser-rendered scraping is a separate daily path for pages that need JavaScript or store selection and should not run from the UI request path. It is disabled by default and currently wired for Marktkauf first. When enabled, the scheduler runs it after the normal daily refresh, stores HTML/screenshot snapshots in `BrowserScrapeSnapshot`, and replaces active offers only when extracted offers are found. Empty, blocked, or failed pages are kept as debug snapshots without deactivating existing offers.
+
+Debug it locally with:
+
+```bash
+pnpm --filter nomnomstock-offers run test:browser:marktkauf -- --postal-code 10115 --snapshot-dir ./tmp/marktkauf-browser --browser-endpoint 'ws://host.docker.internal:5600?token=<token>'
+```
+
+The browser path uses `playwright-core` as a client library. If `OFFERS_BROWSER_WS_ENDPOINT` is set, it connects to a remote Chrome/CDP service such as Browserless and does not install or launch Chromium in the offers container. If the endpoint is empty, it falls back to a local Playwright launch. Without a Playwright client library, the script and scheduler record `browser_runtime_missing` snapshots and leave the normal service running.
+
+For your Browserless container exposed on the Docker host, a local Docker Compose test can use:
+
+```bash
+OFFERS_BROWSER_WS_ENDPOINT='ws://host.docker.internal:5600?token=<token>'
+OFFERS_BROWSER_SCRAPER_ENABLED=true
+```
+
+If Browserless is in the same Docker network as the offers service, prefer:
+
+```bash
+OFFERS_BROWSER_WS_ENDPOINT='ws://browserless:3000?token=<token>'
+```
 
 ---
 

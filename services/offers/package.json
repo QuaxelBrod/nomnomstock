@@ -9,6 +9,8 @@
     "typecheck": "pnpm run prisma:generate && tsc -p tsconfig.json --noEmit",
     "start": "node dist/src/server.js",
     "test:connector": "ts-node-dev --transpile-only --exit-child scripts/test-connector.ts",
+    "test:browser": "ts-node-dev --transpile-only --exit-child scripts/test-browser-scrape.ts",
+    "test:browser:marktkauf": "ts-node-dev --transpile-only --exit-child scripts/test-browser-scrape.ts marktkauf",
     "test:connector:aldi": "ts-node-dev --transpile-only --exit-child scripts/test-connector.ts aldi",
     "test:connector:cap": "ts-node-dev --transpile-only --exit-child scripts/test-connector.ts cap",
     "test:connector:edeka": "ts-node-dev --transpile-only --exit-child scripts/test-connector.ts edeka",
@@ -26,7 +28,8 @@
     "@prisma/client": "^5.0.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "playwright-core": "^1.61.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.5",

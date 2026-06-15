@@ -26,6 +26,7 @@ model ScanTarget {
   updatedAt       DateTime     @updatedAt
   offers          Offer[]
   refreshItems    RefreshItem[]
+  browserSnapshots BrowserScrapeSnapshot[]
 
   @@unique([retailerKey, scopeType, scopeValue])
   @@index([postalCode])
@@ -108,4 +109,25 @@ model OfferPlan {
   createdAt        DateTime @default(now())
 
   @@index([householdId, createdAt])
+}
+
+model BrowserScrapeSnapshot {
+  id             Int         @id @default(autoincrement())
+  scanTarget     ScanTarget? @relation(fields: [scanTargetId], references: [id])
+  scanTargetId   Int?
+  retailerKey    String
+  retailerName   String
+  postalCode     String?
+  sourceUrl      String
+  status         String
+  httpStatus     Int?
+  offersFound    Int         @default(0)
+  message        String?
+  htmlPath       String?
+  screenshotPath String?
+  createdAt      DateTime    @default(now())
+
+  @@index([retailerKey, createdAt])
+  @@index([scanTargetId, createdAt])
+  @@index([status, createdAt])
 }

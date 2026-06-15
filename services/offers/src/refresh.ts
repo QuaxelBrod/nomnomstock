@@ -48,7 +48,7 @@ export async function upsertScanTargets(postalCode: string, retailerKeys: Retail
   return rows
 }
 
-function toTargetInput(row: any): ScanTargetInput {
+export function scanTargetRowToInput(row: any): ScanTargetInput {
   return {
     retailerKey: row.retailerKey,
     retailerName: row.retailerName,
@@ -62,7 +62,7 @@ function toTargetInput(row: any): ScanTargetInput {
   }
 }
 
-async function replaceActiveOffers(scanTargetId: number, offers: NormalizedOffer[]) {
+export async function replaceOffersForTarget(scanTargetId: number, offers: NormalizedOffer[]) {
   await prisma.$transaction([
     prisma.offer.updateMany({ where: { scanTargetId, isActive: true }, data: { isActive: false } }),
     ...offers.map((offer) =>
@@ -150,7 +150,7 @@ async function enrichActiveOfferImages(scanTargetId: number, budget: OfferImageL
 }
 
 async function refreshTarget(runId: number, row: any, force: boolean, imageBudget: OfferImageLookupBudget) {
-  const target = toTargetInput(row)
+  const target = scanTargetRowToInput(row)
   try {
     const sources = await fetchSources(target)
     const offersBySource = await Promise.all(sources.map((source) => extractOffers(target, source)))
@@ -162,7 +162,7 @@ async function refreshTarget(runId: number, row: any, force: boolean, imageBudge
 
     if (sourceChanged) {
       const offersWithImages = await enrichOfferImages(allOffers, imageBudget)
-      await replaceActiveOffers(row.id, offersWithImages)
+      await replaceOffersForTarget(row.id, offersWithImages)
     } else {
       const imageUpdates = await enrichActiveOfferImages(row.id, imageBudget)
       changed = imageUpdates > 0

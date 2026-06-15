@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 
+import { browserScraperEnabled, listBrowserScrapeSnapshots, runBrowserScrapes } from './browserScraper'
 import { DEFAULT_RETAILERS, envNumber, normalizePostalCode, normalizeRetailerKeys } from './config'
 import { prisma } from './db'
 import { createOfferPlan, getLatestPlan, getPlan } from './planner'
@@ -79,6 +80,34 @@ app.get('/refresh/latest', async (_req, res) => {
   }
 })
 
+app.post('/browser-scrape/run', async (req, res) => {
+  try {
+    const run = await runBrowserScrapes({
+      postalCode: req.body?.postalCode,
+      retailerKeys: req.body?.retailerKeys,
+      scanTargetIds: req.body?.scanTargetIds,
+      force: Boolean(req.body?.force),
+      requestedBy: req.body?.requestedBy ? String(req.body.requestedBy) : 'api',
+    })
+    return res.json({ run })
+  } catch (err) {
+    return errorResponse(res, err)
+  }
+})
+
+app.get('/browser-scrape/snapshots/latest', async (req, res) => {
+  try {
+    return res.json({
+      snapshots: await listBrowserScrapeSnapshots({
+        retailerKeys: req.query.retailerKeys,
+        limit: req.query.limit,
+      }),
+    })
+  } catch (err) {
+    return errorResponse(res, err)
+  }
+})
+
 app.get('/offers/current', async (req, res) => {
   try {
     const data = await listCurrentOffers({
@@ -141,6 +170,12 @@ function scheduleDailyRefresh() {
     try {
       console.log('[offers] daily refresh started')
       await refreshOffers({ requestedBy: 'scheduler', force: false })
+      if (browserScraperEnabled()) {
+        const browserRun = await runBrowserScrapes({ requestedBy: 'scheduler', force: false })
+        console.log(
+          `[offers] browser scrape finished: status=${browserRun.status} targets=${browserRun.scannedTargets} offers=${browserRun.offersFound}`
+        )
+      }
       await purgeOldOffers()
       console.log('[offers] daily refresh finished')
     } catch (err) {
